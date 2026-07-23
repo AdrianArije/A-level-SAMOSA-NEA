@@ -1,61 +1,60 @@
 import tkinter as tk
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
-class MainApp: # initializing the MainApp class which serves as the controller
+class MainApp: # Initializing the MainApp class which serves as the controller
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("SAMOSA")
+        self.root.title("SAMOSA") # Screen Geometry
         self.root.geometry("800x600")
-        
 
-        self.frames = { # this dictionary would contain all GUI classes
+        # This dictionary would contain all GUI classes
+        self.frames = {
             "login" : LoginFrame(self),
             "customerframe" : CustomerFrame(self)
         }
-        
 
-        self.show_frame(self.frames["login"]) # sets the current screen to show once application starts running
+        self.show_frame(self.frames["login"]) # Sets the current screen to show once application starts running
 
         self.root.mainloop()
 
-    def show_frame(self,frame): # function to show frames and prevent other frames from showing
+    def show_frame(self,frame): # Function to show frames and prevent other frames from showing
         for current_frame in self.frames.values():
             current_frame.pack_forget()
         frame.pack(fill = "both", expand=True)
 
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
-class LoginFrame(tk.Frame): # login frame initialization
+class LoginFrame(tk.Frame): # Login frame initialization
     def __init__(self,app):
-        super().__init__(app.root) # inherits the main root window as the place to be displayed
+        super().__init__(app.root) # Inherits the main root window as the place to be displayed
         self.app = app
         self.configure(background="#3a79ee")
 
-        intro = tk.Label(self,text = "Welcome to Adrian's Canteen ",font= ("Arial", 43),bg="#3a79ee", foreground="#fbf025") # intro text label
+        intro = tk.Label(self,text = "Welcome to Adrian's Canteen ",font= ("Arial", 43),bg="#3a79ee", foreground="#fbf025") # Intro text label
         intro.grid(row=0,column = 1,columnspan=2, padx = 10, pady =15)
 
-        self.entry_frame = tk.Frame(self) # creating new frame for entry widgets
+        self.entry_frame = tk.Frame(self) # Creating new frame for entry widgets
         self.entry_frame.place(x=280,y=220)
 
-        lgntext = tk.Label(self.entry_frame,text = "    Login In / Sign up    ",font= ("Arial", 20)) # login label
+        lgntext = tk.Label(self.entry_frame,text = "    Login In / Sign up    ",font= ("Arial", 20)) # Login label
         lgntext.grid(row=0,column = 0, columnspan=2)
 
-        username_label = tk.Label(self.entry_frame,text = "Username",font = ("Arial",10)) # username label
+        username_label = tk.Label(self.entry_frame,text = "Username",font = ("Arial",10)) # Username label
         username_label.grid(row=1,column = 0)
 
-        username_entry =tk.Entry(self.entry_frame,width=20) # username entry box
-        username_entry.grid(row=1,column = 1, padx = 12, pady =10)
+        self.username_entry =tk.Entry(self.entry_frame,width=20) # Username entry box
+        self.username_entry.grid(row=1,column = 1, padx = 12, pady =10)
 
-        password_label = tk.Label(self.entry_frame,text = "Password",font = ("Arial",10)) # password entry label
+        password_label = tk.Label(self.entry_frame,text = "Password",font = ("Arial",10)) # Password entry label
         password_label.grid(row=2,column = 0)
 
-        password_entry =tk.Entry(self.entry_frame,width=20) # password entry box
-        password_entry.grid(row=2,column = 1, padx = 12, pady =10)
+        self.password_entry =tk.Entry(self.entry_frame,width=20) # Password entry box
+        self.password_entry.grid(row=2,column = 1, padx = 12, pady =10)
 
-        loginbtn = tk.Button(self.entry_frame, text="Login", command=self.login) # login button
+        loginbtn = tk.Button(self.entry_frame, text="Login", command=self.login) # Login button
         loginbtn.grid(row=3,column = 0, pady=10)
 
-        signupbtn = tk.Button(self.entry_frame, text="Sign Up", command=self.signup) # sign up button
+        signupbtn = tk.Button(self.entry_frame, text="Sign Up", command=self.signup) # Sign up button
         signupbtn.grid(row=3,column = 1, pady=5)
 
     def login(self):
@@ -69,60 +68,81 @@ class LoginFrame(tk.Frame): # login frame initialization
 
 
 #----------------------------------------------------------------------------------------------------------------------------------
-class CustomerFrame(tk.Frame): # customer frame initialization
+class CustomerFrame(tk.Frame): # Customer frame initialization
     def __init__(self,app):
-        super().__init__(app.root) # inherits the main root window as the place to be displayed
+        super().__init__(app.root) # Inherits the main root window as the place to be displayed
         self.app = app
         self.configure(background="red")
 
-        self.cartframe= CartFrame(self) # linking cart frame as a sub class of customer frame
-        self.cartframe.place_forget() # hiding the cart frame
+        self.cartframe= CartFrame(self) # Linking cart frame as a sub class of customer frame
+        self.cartframe.place_forget() # Hiding the cart frame
 
         header_frame = tk.Frame(self,bg ="red") # crating header frame for header
         header_frame.pack()
 
-        content_frame = tk.Frame(self, bg="red") # creating content frame for items
+        content_frame = tk.Frame(self, bg="red") # Creating content frame for items
         content_frame.pack(fill="both", expand=True)
 
-        intro = tk.Label(header_frame,text = "Menu Items",font= ("Arial", 43),bg="red", foreground="#fbf025",anchor="center") # intro text
+        intro = tk.Label(header_frame,text = "Menu Items",font= ("Arial", 43),bg="red", foreground="#fbf025",anchor="center") # Intro text
         intro.grid(row=0,column=1,columnspan=2)
 
-        search_entry = tk.Entry(content_frame, width=90) # search entry box
-        search_entry.grid(row=0, column=0, padx = 25)
+        self.search_entry = tk.Entry(content_frame, width=90) # Search entry box
+        self.search_entry.grid(row=0, column=0, padx = 25)
 
-        searchbtn = tk.Button(content_frame, text="Search", command=self.search) # search button
+        searchbtn = tk.Button(content_frame, text="Search", command=self.search) # Search button
         searchbtn.grid(row=0, column=1,padx = 5)
 
-        filter_btn = tk.Menubutton(content_frame,text = "Filter ▼", relief="raised") # adding the filter button menu
-        filter_btn.grid(row=0,column=2,padx= 5) # set postion
-        dropdown = tk.Menu(filter_btn,tearoff=0)
-        self.drinks_var = tk.BooleanVar() # making a variable to check if box is ticked
-        dropdown.add_checkbutton(label = "Drinks",variable = self.drinks_var) # adding button checkbox
-        filter_btn["menu"] = dropdown # linking button and dropdown
-
-        sort_btn = tk.Menubutton(content_frame,text = "Sort By ▼", relief="raised") # adding the sort button menu
-        sort_btn.grid(row=0,column=3, padx=5) # set position
+        sort_btn = tk.Menubutton(content_frame,text = "Sort By ▼", relief="raised") # Adding the sort button menu
+        sort_btn.grid(row=0,column=3, padx=5) # Set position
         sort_dropdown = tk.Menu(sort_btn,tearoff=0)
-        sort_dropdown.add_command(label = "By Price",command = self.filterprice) # adding sorting button
+        sort_dropdown.add_command(label = "By Price",command = self.filterprice) # Adding sorting button
         sort_dropdown.add_separator()
         sort_dropdown.add_command(label = "By Name",command = self.filtername)
-        sort_btn["menu"] = sort_dropdown # link button to drop down
-# for the filter use a label frame to hide options and user has to press search
-# for sorting use a ttk.combobox
+        sort_btn["menu"] = sort_dropdown # Link button to drop down
 
-        options_btn = tk.Menubutton(header_frame,text = "▼ OPTIONS", relief="raised",bg="red") # creating a menu drop down for options
+        options_btn = tk.Menubutton(header_frame,text = "▼ OPTIONS", relief="raised",bg="red") # Creating a menu drop down for options
         options_btn.grid(row=0,column=8,padx= 10)
         options_dropdown= tk.Menu(options_btn,tearoff=0)
-        options_dropdown.add_command(label="CART",command=self.cart) # adding all the options with commands
+        options_dropdown.add_command(label="CART",command=self.cart) # Adding all the options with commands
         options_dropdown.add_command(label="ORDER HISTORY",command=self.orderpage)
         options_dropdown.add_command(label="SETTINGS",command=self.settings)
         options_dropdown.add_command(label="LOGOUT",command=self.logout)
-        options_btn["menu"] = options_dropdown # likning the button with the menu
+        options_btn["menu"] = options_dropdown # Likning the button with the menu
+
+        self.filter_frame = tk.LabelFrame(content_frame,text="Select Category")# Frame for filter options
+        self.filter_frame.place_forget()
+
+        self.drinks_var = tk.BooleanVar() # Making a variable to check if box is ticked
+        drinks = tk.Checkbutton(self.filter_frame,text = "Drinks",variable = self.drinks_var)
+        drinks.grid(row=0,column = 0)
+
+        self.meals_var = tk.BooleanVar() # Making a variable to check if box is ticked
+        meals = tk.Checkbutton(self.filter_frame,text = "Meals",variable = self.meals_var)
+        meals.grid(row=1,column = 0)
+
+        self.snack_var = tk.BooleanVar() # Making a variable to check if box is ticked
+        snack = tk.Checkbutton(self.filter_frame,text = "Snacks",variable = self.snack_var)
+        snack.grid(row=2,column = 0)
+
+        filter_btn = tk.Button(content_frame,text ="Filter ▼", command = self.filterbutton) # Filter button
+        filter_btn.grid(row=0,column=2,padx= 5)
+
+        self.filter_close = tk.Button(self.filter_frame,text ="Close", command = self.filterclose)
+        self.filter_close.grid(row=4,column = 0)
+
+    def filterbutton(self):
+        self.filter_frame.place(x=620,y =30)
+
+    def filterclose(self):
+        print("closing")
+        self.filter_frame.place_forget()
 
     def settings(self):
         pass
+
     def orderpage(self):
         pass
+
     def cart(self):
         self.cartframe.place(relx=0.5, rely=0.5, anchor="center")
         self.cartframe.lift()
@@ -141,15 +161,14 @@ class CustomerFrame(tk.Frame): # customer frame initialization
         pass
     print("Customer Frame Initialized")
 
-class CartFrame(tk.Frame): # customer frame initialization
+class CartFrame(tk.Frame): # Cart frame initialization
     def __init__(self,parent):
-        super().__init__(parent) # inherits the main root window as the place to be displayed
+        super().__init__(parent) # Inherits the CustomerFrame window as the place to be displayed
         self.configure(background="brown",width=400,height=400)
-        self.pack_propagate(False)
+        self.pack_propagate(False) # Keep size fixed
+
         close_btn = tk.Button(self,text = "Close", command=self.close)
         close_btn.place(x=180,y=370)
-        
-
 
     def close(self):
         self.place_forget()
