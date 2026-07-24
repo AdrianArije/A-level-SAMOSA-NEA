@@ -10,7 +10,9 @@ class MainApp: # Initializing the MainApp class which serves as the controller
         # This dictionary would contain all GUI classes
         self.frames = {
             "login" : LoginFrame(self),
-            "customerframe" : CustomerFrame(self)
+            "customerframe" : CustomerFrame(self),
+            "settings" : SettingsFrame(self),
+            "orderhistory" : OrderHistoryFrame(self)
         }
 
         self.show_frame(self.frames["login"]) # Sets the current screen to show once application starts running
@@ -138,10 +140,10 @@ class CustomerFrame(tk.Frame): # Customer frame initialization
         self.filter_frame.place_forget()
 
     def settings(self):
-        pass
+        self.app.show_frame(self.app.frames["settings"])
 
     def orderpage(self):
-        pass
+       self.app.show_frame(self.app.frames["orderhistory"])
 
     def cart(self):
         self.cartframe.place(relx=0.5, rely=0.5, anchor="center")
@@ -172,5 +174,70 @@ class CartFrame(tk.Frame): # Cart frame initialization
 
     def close(self):
         self.place_forget()
+
+class SettingsFrame(tk.Frame): # Settings frame initialization
+    def __init__(self,app):
+        super().__init__(app.root) # Inherits the main root window as the place to be displayed
+        self.app = app
+        self.configure(background="grey")
+
+        header_frame = tk.Frame(self)
+        header_frame.pack()
+
+        msg = tk.Label(self,text= "Welcome to the settings page", anchor="center", font=("Arial",20), bg = "grey")
+        msg.pack(pady=10)
+
+        content_frame = tk.Frame(self,bg = "grey")
+        content_frame.pack(fill="both", expand=True)
+
+        user_label = tk.Label(content_frame,text="  Username:  ",font=("Arial",20),bg="grey")
+        user_label.grid(row=0,column=0,padx=10,pady=10)
+
+        user_entry = tk.Entry(content_frame,width=40)
+        user_entry.grid(row=0,column= 1,padx= 20,pady=50)
+
+        password_label = tk.Label(content_frame,text="  Current password:  ",font=("Arial",20),bg="grey")
+        password_label.grid(row=1,column=0,padx=10,pady=10)
+        
+        password_entry = tk.Entry(content_frame,width=40)
+        password_entry.grid(row=1,column= 1,padx= 20,pady= 50)
+
+        new_password_label = tk.Label(content_frame,text="  New password:  ",font=("Arial",20),bg="grey")
+        new_password_label.grid(row=3,column=0,padx=10,pady=10)
+                
+        new_password_entry = tk.Entry(content_frame,width=40)
+        new_password_entry.grid(row=3,column= 1,padx= 20,pady=50)
+
+        new_pass_btn = tk.Button(content_frame,text="Change password")#, command= self.change_password)
+        new_pass_btn.grid(row=3,column=2, padx= 10,pady=10)
+
+        back_btn = tk.Button(content_frame,text="Back", command= self.back_menu)
+        back_btn.grid(row=4,column=1, padx= 10,pady=30)
+
+    def back_menu(self):
+        self.app.show_frame(self.app.frames["customerframe"])
+
+
+
+class OrderHistoryFrame(tk.Frame): # Order history frame initialization
+    def __init__(self,app):
+        super().__init__(app.root) # Inherits the main root window as the place to be displayed
+        self.app = app
+        self.configure(background="brown")
+
+        hearder_frame = tk.Frame(self,bg= "brown")
+        hearder_frame.pack()
+
+        content_frame = tk.Frame(self,bg="brown")
+        content_frame.pack(fill="both", expand=True)
+
+        intro = tk.Label(hearder_frame,text="  Welcome to your order history  ",anchor="center", font=("Arial",20), bg = "brown")
+        intro.pack()
+
+        back_btn = tk.Button(hearder_frame,text="Back", command= self.back_menu)
+        back_btn.pack(pady=30)
+
+    def back_menu(self):
+        self.app.show_frame(self.app.frames["customerframe"])
 MainApp()
 
