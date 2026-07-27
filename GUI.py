@@ -1,4 +1,7 @@
 import tkinter as tk
+from tkinter import messagebox
+from  DatabaseManager import DatabaseClass
+
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 class MainApp: # Initializing the MainApp class which serves as the controller
@@ -6,7 +9,7 @@ class MainApp: # Initializing the MainApp class which serves as the controller
         self.root = tk.Tk()
         self.root.title("SAMOSA") # Screen Geometry
         self.root.geometry("800x600")
-
+        self.database = DatabaseClass()
         # This dictionary would contain all GUI classes
         self.frames = {
             "login" : LoginFrame(self),
@@ -50,7 +53,7 @@ class LoginFrame(tk.Frame): # Login frame initialization
         password_label = tk.Label(self.entry_frame,text = "Password",font = ("Arial",10)) # Password entry label
         password_label.grid(row=2,column = 0)
 
-        self.password_entry =tk.Entry(self.entry_frame,width=20) # Password entry box
+        self.password_entry =tk.Entry(self.entry_frame,width=20,show="*") # Password entry box
         self.password_entry.grid(row=2,column = 1, padx = 12, pady =10)
 
         loginbtn = tk.Button(self.entry_frame, text="Login", command=self.login) # Login button
@@ -64,8 +67,14 @@ class LoginFrame(tk.Frame): # Login frame initialization
         self.app.show_frame(self.app.frames["customerframe"])
 
     def signup(self):
+            self.password_entry.delete(0,tk.END)# Clearing the fields
+            self.username_entry.delete(0,tk.END)
 
-         self.app.show_frame(self.app.frames["customerframe"])
+            security = self.app.database.Signup(self.username_entry.get(),self.password_entry.get())
+            if security:
+                self.app.show_frame(self.app.frames["customerframe"])
+            else:
+                messagebox.showerror("Error Signing Up", "Inputs are below 8 characters or Username already exists")
     print("Login Frame Initialized")
 
 
