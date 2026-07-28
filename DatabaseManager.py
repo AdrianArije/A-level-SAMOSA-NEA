@@ -36,3 +36,24 @@ class DatabaseClass:
                     return False
             self.connection.commit()
             return True
+
+    def Login(self,username,password): ## Initialize functions
+        self.username = username
+        self.password = password
+
+        if self.validate(self.username): # Validate username
+            find_user = self.cursor.execute("""
+                SELECT * FROM Users 
+                WHERE Username = (?)
+""",(self.username,)).fetchone() # Search Database
+            if find_user:
+                passcode = find_user[2] # Retrieve password
+                if passcode == self.password: # Compare password
+                    return "Access granted"
+                else:
+                    return "Incorrect password"
+            else:
+                return "Username not found"
+        else:
+            return "Invalid username"
+

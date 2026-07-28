@@ -63,14 +63,26 @@ class LoginFrame(tk.Frame): # Login frame initialization
         signupbtn.grid(row=3,column = 1, pady=5)
 
     def login(self):
-        # Normally you'd check the database here.
-        self.app.show_frame(self.app.frames["customerframe"])
+        access = self.app.database.Login(self.username_entry.get(),self.password_entry.get())
+
+        #self.password_entry.delete(0,tk.END)# Clearing the fields
+        #self.username_entry.delete(0,tk.END)
+
+        if access == "Access granted":
+            self.app.show_frame(self.app.frames["customerframe"])
+        elif access == "Incorrect password":
+            messagebox.showerror("Error Logging In", "Incorrect Password entered")
+        elif access == "Username not found":
+            messagebox.showerror("Error Logging In", "Username not found. Try Signing Up")
+        elif access == "Invalid username":
+            messagebox.showerror("Error Logging In", "Username is below 8 characters")
 
     def signup(self):
+            security = self.app.database.Signup(self.username_entry.get(),self.password_entry.get())
+
             self.password_entry.delete(0,tk.END)# Clearing the fields
             self.username_entry.delete(0,tk.END)
 
-            security = self.app.database.Signup(self.username_entry.get(),self.password_entry.get())
             if security:
                 self.app.show_frame(self.app.frames["customerframe"])
             else:
