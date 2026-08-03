@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from  DatabaseManager import DatabaseClass
-
+from PIL import ImageTk, Image
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 class MainApp: # Initializing the MainApp class which serves as the controller
@@ -19,7 +19,7 @@ class MainApp: # Initializing the MainApp class which serves as the controller
         }
 
         self.show_frame(self.frames["login"]) # Sets the current screen to show once application starts running
-
+        
         self.root.mainloop()
 
     def show_frame(self,frame): # Function to show frames and prevent other frames from showing
@@ -36,10 +36,10 @@ class LoginFrame(tk.Frame): # Login frame initialization
         self.configure(background="#3a79ee")
 
         intro = tk.Label(self,text = "Welcome to Adrian's Canteen ",font= ("Arial", 43),bg="#3a79ee", foreground="#fbf025") # Intro text label
-        intro.grid(row=0,column = 1,columnspan=2, padx = 10, pady =15)
+        intro.grid(row=0,column = 1,columnspan=3, padx = 10, pady =15)
 
         self.entry_frame = tk.Frame(self) # Creating new frame for entry widgets
-        self.entry_frame.place(x=280,y=220)
+        self.entry_frame.place(x=300,y=220)
 
         lgntext = tk.Label(self.entry_frame,text = "    Login In / Sign up    ",font= ("Arial", 20)) # Login label
         lgntext.grid(row=0,column = 0, columnspan=2)
@@ -85,9 +85,10 @@ class LoginFrame(tk.Frame): # Login frame initialization
 
             if security:
                 self.app.show_frame(self.app.frames["customerframe"])
+                
             else:
                 messagebox.showerror("Error Signing Up", "Inputs are below 8 characters or Username already exists")
-    print("Login Frame Initialized")
+    #print("Login Frame Initialized")
 
 
 #----------------------------------------------------------------------------------------------------------------------------------
@@ -96,6 +97,7 @@ class CustomerFrame(tk.Frame): # Customer frame initialization
         super().__init__(app.root) # Inherits the main root window as the place to be displayed
         self.app = app
         self.configure(background="red")
+        self.cards = []
 
         self.cartframe= CartFrame(self) # Linking cart frame as a sub class of customer frame
         self.cartframe.place_forget() # Hiding the cart frame
@@ -103,19 +105,37 @@ class CustomerFrame(tk.Frame): # Customer frame initialization
         header_frame = tk.Frame(self,bg ="red") # crating header frame for header
         header_frame.pack()
 
-        content_frame = tk.Frame(self, bg="red") # Creating content frame for items
+        content_frame = tk.Frame(self, bg="yellow") # Creating content frame for items
         content_frame.pack(fill="both", expand=True)
+
+        toolbar_frame = tk.Frame(content_frame, bg="yellow")
+        toolbar_frame.pack(fill="x")
+
+        canvas_frame = tk.Frame(content_frame, bg="yellow")
+        canvas_frame.pack(fill="both", expand=True)
+
+        scrollbar = tk.Scrollbar(canvas_frame,orient="vertical")
+        scrollbar.pack(side="right",fill="y")
+
+        self.canvas = tk.Canvas(canvas_frame,yscrollcommand=scrollbar.set)
+        scrollbar.config(command=self.canvas.yview)
+        self.item_frame = tk.Frame(self.canvas,bg = "brown")
+        self.canvas.create_window((0,0),window=self.item_frame,anchor="nw")
+        self.canvas_window = self.canvas.create_window((0,0),window=self.item_frame,anchor="nw")
+        self.item_frame.bind("<Configure>",lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.pack(side="left",fill="both",expand=True)
+        
 
         intro = tk.Label(header_frame,text = "Menu Items",font= ("Arial", 43),bg="red", foreground="#fbf025",anchor="center") # Intro text
         intro.grid(row=0,column=1,columnspan=2)
 
-        self.search_entry = tk.Entry(content_frame, width=90) # Search entry box
+        self.search_entry = tk.Entry(toolbar_frame, width=90) # Search entry box
         self.search_entry.grid(row=0, column=0, padx = 25)
 
-        searchbtn = tk.Button(content_frame, text="Search", command=self.search) # Search button
+        searchbtn = tk.Button(toolbar_frame, text="Search", command=self.search) # Search button
         searchbtn.grid(row=0, column=1,padx = 5)
 
-        sort_btn = tk.Menubutton(content_frame,text = "Sort By ▼", relief="raised") # Adding the sort button menu
+        sort_btn = tk.Menubutton(toolbar_frame,text = "Sort By ▼", relief="raised") # Adding the sort button menu
         sort_btn.grid(row=0,column=3, padx=5) # Set position
         sort_dropdown = tk.Menu(sort_btn,tearoff=0)
         sort_dropdown.add_command(label = "By Price",command = self.filterprice) # Adding sorting button
@@ -147,17 +167,23 @@ class CustomerFrame(tk.Frame): # Customer frame initialization
         snack = tk.Checkbutton(self.filter_frame,text = "Snacks",variable = self.snack_var)
         snack.grid(row=2,column = 0)
 
-        filter_btn = tk.Button(content_frame,text ="Filter ▼", command = self.filterbutton) # Filter button
+        filter_btn = tk.Button(toolbar_frame,text ="Filter ▼", command = self.filterbutton) # Filter button
         filter_btn.grid(row=0,column=2,padx= 5)
 
         self.filter_close = tk.Button(self.filter_frame,text ="Close", command = self.filterclose)
         self.filter_close.grid(row=4,column = 0)
 
+        self.display_menu(self.app.database.display_menu())
+        self.canvas.bind("<Configure>", self.resize_canvas)
+
+    def resize_canvas(self,event):
+        self.canvas.itemconfig(self.canvas_window, width=event.width)
+
     def filterbutton(self):
         self.filter_frame.place(x=620,y =30)
 
     def filterclose(self):
-        print("closing")
+        #print("closing")
         self.filter_frame.place_forget()
 
     def settings(self):
@@ -169,20 +195,52 @@ class CustomerFrame(tk.Frame): # Customer frame initialization
     def cart(self):
         self.cartframe.place(relx=0.5, rely=0.5, anchor="center")
         self.cartframe.lift()
-        print("cart")
+        #print("cart")
     def logout(self):
         # Normally you'd check the database here.
-        self.app.show_frame(self.app.frames["login"])  
+        self.app.show_frame(self.app.frames["login"]) 
 
-    def search(self):
-        pass      
+    def display_menu(self,items):
+        index = 0
+        for item in items:
+            id = item[0]
+            name = item[1] 
+            desc = item[2] 
+            img = item[3]
+            price = item[5]
+            col = index % 3
+            rows = index // 3
+            card = ItemCard(self.item_frame,id,name,desc,img,price)
+            card.grid(row=rows,column=col,padx=30,pady=10)
+            #print(col,rows)
+            index = index + 1
+            self.cards.append(card)
+
+    def search(self): 
+        word = self.search_entry.get()
+        self.clear_menu()
+        if word == "":
+            self.display_menu(self.app.database.display_menu())
+        else:
+            self.display_menu(self.app.database.search(word))
+        
+        #if self.drinks_var and self.snack_var and self.meals_var:
+
+        
+
+
+
+    def clear_menu(self):
+        for card in self.cards:
+            card.destroy()
+        self.cards.clear()
 
     def filterprice(self):
         pass
 
     def filtername(self):
         pass
-    print("Customer Frame Initialized")
+    #print("Customer Frame Initialized")
 
 class CartFrame(tk.Frame): # Cart frame initialization
     def __init__(self,parent):
@@ -260,5 +318,72 @@ class OrderHistoryFrame(tk.Frame): # Order history frame initialization
 
     def back_menu(self):
         self.app.show_frame(self.app.frames["customerframe"])
-MainApp()
 
+class ItemCard(tk.Frame): # Initializes the class
+    def __init__(self, parent, item_id, name, description, image, price): # All the parameters
+        super().__init__(parent) # Inherits from the customer frame class
+        self.configure(background="orange",width =200,height=230)
+        self.grid_propagate(False)
+        
+        self.item_id = item_id
+        self.name = name
+        self.description = description
+        self.old_image = image
+        self.price = price
+        self.popup = None
+        self.image = self.image_resize(self.old_image)
+        self.quantity = 0
+
+        self.clickable_widgets(self)
+        
+        img = tk.Label(self,image=self.image, anchor="center",justify="center")
+        img.grid(row=1,column=0,columnspan=2,padx=13,pady=5)
+        self.clickable_widgets(img)
+
+        name = tk.Label(self,text = self.name, anchor="center")
+        name.grid(row=0,column=0,columnspan=2,padx=13,pady=5)
+        self.clickable_widgets(name)
+
+        desc = tk.Label(self,text = self.description, anchor="center",wraplength=190,justify="center")
+        desc.grid(row=2,column=0,columnspan=2,padx=13,pady=5)
+        self.clickable_widgets(desc)
+
+        price = tk.Label(self, text=f"£{self.price:.2f}", anchor="center")
+        price.grid(row=3,column=0,columnspan=2,padx=13,pady=5)
+        self.clickable_widgets(price)
+
+        
+
+    def clickable_widgets(self,widget):
+        widget.bind("<Button-1>",self.open_popup)
+
+    def open_popup(self,event):
+        if self.popup != None:
+            return 
+        self.popup = tk.Toplevel(self)
+        self.popup.title(self.name)
+        self.popup.geometry("300x350")
+        tk.Label(self.popup, text=self.name).pack(pady=10)
+        tk.Label(self.popup, image=self.image).pack(pady=5)
+        tk.Label(self.popup, text=f"This item is a {self.description}",wraplength=150).pack(pady=10)
+        tk.Label(self.popup, text=f"One portion costs: £{self.price:.2f}").pack(pady=10)
+        self.qty = tk.Spinbox(self.popup, from_=0,to=10,width=10,command = self.quantity_value,state="normal",justify="center",wrap="True")
+        self.qty.pack()
+        tk.Button(self.popup,text="Add to chart").pack(pady=5)
+        tk.Button(self.popup,text="Close",command=self.close_popup).pack(pady=5)
+        self.popup.protocol("WM_DELETE_WINDOW", self.close_popup)
+
+    def close_popup(self):
+        self.popup.destroy()
+        self.popup = None
+
+    def image_resize(self,original_img):
+        img = Image.open(original_img).resize((100,100))
+        img = ImageTk.PhotoImage(img)
+        return img
+
+    def quantity_value(self):
+        self.quantity = int(self.qty.get())
+        #print(f"Quantity is now {self.quantity}")
+        
+MainApp()
