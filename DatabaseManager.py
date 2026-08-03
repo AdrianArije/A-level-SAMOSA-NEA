@@ -57,16 +57,28 @@ class DatabaseClass:
         else:
             return "Invalid username"
 
-    def display_menu(self):
-        items = self.cursor.execute("""
-        SELECT * FROM MenuItems
-""").fetchall()
-        return items
 
-    def search(self,word):
-        items = self.cursor.execute("""
-SELECT * FROM MenuItems
-WHERE Item_Name LIKE ?
-""", (f"%{word}%",)).fetchall()
+
+    def display_menu(self,word,category):
+        placeholders = ",".join(["?"] * len(category))
+        if word != "" and category != []:
+            items = self.cursor.execute(f"""
+            SELECT * FROM MenuItems 
+            WHERE Item_Name LIKE ? AND Category_ID IN ({placeholders})
+            """,(f"%{word}%",*category)).fetchall()
+        elif word == "" and category != []:
+           items = self.cursor.execute(f"""
+           SELECT * FROM MenuItems 
+           WHERE Category_ID IN ({placeholders})
+           """,(category)).fetchall()
+        elif word != "" and category == []:
+            items = self.cursor.execute("""
+            SELECT * FROM MenuItems 
+            WHERE Item_Name LIKE (?)
+            """,(f"%{word}%",)).fetchall()
+        else:
+            items = self.cursor.execute("""
+                    SELECT * FROM MenuItems
+            """).fetchall() 
         return items
 

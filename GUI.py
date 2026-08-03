@@ -18,7 +18,7 @@ class MainApp: # Initializing the MainApp class which serves as the controller
             "orderhistory" : OrderHistoryFrame(self)
         }
 
-        self.show_frame(self.frames["login"]) # Sets the current screen to show once application starts running
+        self.show_frame(self.frames["customerframe"]) # Sets the current screen to show once application starts running
         
         self.root.mainloop()
 
@@ -98,6 +98,9 @@ class CustomerFrame(tk.Frame): # Customer frame initialization
         self.app = app
         self.configure(background="red")
         self.cards = []
+        self.search_text = ""
+        self.category = []
+        self.current_items = []
 
         self.cartframe= CartFrame(self) # Linking cart frame as a sub class of customer frame
         self.cartframe.place_forget() # Hiding the cart frame
@@ -132,7 +135,7 @@ class CustomerFrame(tk.Frame): # Customer frame initialization
         self.search_entry = tk.Entry(toolbar_frame, width=90) # Search entry box
         self.search_entry.grid(row=0, column=0, padx = 25)
 
-        searchbtn = tk.Button(toolbar_frame, text="Search", command=self.search) # Search button
+        searchbtn = tk.Button(toolbar_frame, text="Search", command=self.refresh_menu) # Search button
         searchbtn.grid(row=0, column=1,padx = 5)
 
         sort_btn = tk.Menubutton(toolbar_frame,text = "Sort By ▼", relief="raised") # Adding the sort button menu
@@ -167,13 +170,17 @@ class CustomerFrame(tk.Frame): # Customer frame initialization
         snack = tk.Checkbutton(self.filter_frame,text = "Snacks",variable = self.snack_var)
         snack.grid(row=2,column = 0)
 
+        self.desserts_var = tk.BooleanVar() # Making a variable to check if box is ticked
+        desserts_var = tk.Checkbutton(self.filter_frame,text = "Desserts",variable = self.desserts_var)
+        desserts_var.grid(row=3,column = 0)
+
         filter_btn = tk.Button(toolbar_frame,text ="Filter ▼", command = self.filterbutton) # Filter button
         filter_btn.grid(row=0,column=2,padx= 5)
 
-        self.filter_close = tk.Button(self.filter_frame,text ="Close", command = self.filterclose)
-        self.filter_close.grid(row=4,column = 0)
+        self.filter_action = tk.Button(self.filter_frame,text ="Filter", command = self.filter_action)
+        self.filter_action.grid(row=4,column = 0)
 
-        self.display_menu(self.app.database.display_menu())
+        self.refresh_menu()
         self.canvas.bind("<Configure>", self.resize_canvas)
 
     def resize_canvas(self,event):
@@ -182,9 +189,18 @@ class CustomerFrame(tk.Frame): # Customer frame initialization
     def filterbutton(self):
         self.filter_frame.place(x=620,y =30)
 
-    def filterclose(self):
-        #print("closing")
-        self.filter_frame.place_forget()
+    def filter_action(self):
+        self.filter_frame.place_forget() # Close popup
+        if self.meals_var.get() == True:
+            self.category.append(1) # Append to categries if the category is ticked
+        if self.snack_var.get() == True:
+            self.category.append(2) # Append to categries if the category is ticked
+        if self.drinks_var.get() == True:
+            self.category.append(3) # Append to categries if the category is ticked
+        if self.desserts_var.get() == True:
+            self.category.append(4) # Append to categries if the category is ticked
+        self.refresh_menu() # Refresh menu items
+        self.category.clear() # Reset all the checkboxes list
 
     def settings(self):
         self.app.show_frame(self.app.frames["settings"])
@@ -200,7 +216,7 @@ class CustomerFrame(tk.Frame): # Customer frame initialization
         # Normally you'd check the database here.
         self.app.show_frame(self.app.frames["login"]) 
 
-    def display_menu(self,items):
+    def display_items(self,items):
         index = 0
         for item in items:
             id = item[0]
@@ -215,28 +231,29 @@ class CustomerFrame(tk.Frame): # Customer frame initialization
             #print(col,rows)
             index = index + 1
             self.cards.append(card)
-
-    def search(self): 
+        
+    def refresh_menu(self):
         word = self.search_entry.get()
         self.clear_menu()
-        if word == "":
-            self.display_menu(self.app.database.display_menu())
-        else:
-            self.display_menu(self.app.database.search(word))
-        
-        #if self.drinks_var and self.snack_var and self.meals_var:
-
-        
-
-
+        self.current_items = self.app.database.display_menu(word,self.category)
+        self.display_items(self.current_items)
 
     def clear_menu(self):
         for card in self.cards:
             card.destroy()
         self.cards.clear()
+        #self.current_items.clear()
 
     def filterprice(self):
-        pass
+        self.clear_menu()
+        for item in range(len(self.current_items)-1):
+            for i in range(len(self.current_items)-1):
+                if self.current_items[i][5] > self.current_items[i + 1][5]:
+                    temp = self.current_items[i]
+                    self.current_items[i] = self.current_items[i + 1]
+                    self.current_items[i + 1]= temp
+        self.display_items(self.current_items)
+
 
     def filtername(self):
         pass
