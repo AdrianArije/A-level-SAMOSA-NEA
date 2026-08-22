@@ -77,86 +77,86 @@ cursor.execute("PRAGMA foreign_keys = ON")
 #     # Meals
 # (1, "Chicken Wrap",
 #  "Grilled chicken with lettuce and sauce in a tortilla.",
-#  "Images/Chicken-Wrap.jpg", 15, 3.50, 1),
+#  "Images/Chicken-Wrap.jpg", 45, 3.50, 1),
 
 # (2, "Cheese Burger",
 #  "Beef burger with cheese, lettuce and burger sauce.",
-#  "Images/Cheese-Burger.jpg", 12, 4.25, 1),
+#  "Images/Cheese-Burger.jpg", 45, 4.25, 1),
 
 # (3, "Margherita Pizza",
 #  "Pizza topped with tomato sauce, mozzarella and herbs.",
-#  "Images/Margherita-Pizza.jpg", 10, 4.50, 1),
+#  "Images/Margherita-Pizza.jpg", 45, 4.50, 1),
 
 # (4, "Chicken Pasta",
 #  "Pasta with grilled chicken and a creamy tomato sauce.",
-#  "Images/Chicken-Pasta.jpg", 8, 4.75, 1),
+#  "Images/Chicken-Pasta.jpg", 45, 4.75, 1),
 
 # (5, "Veggie Wrap",
 #  "Mixed vegetables, lettuce and sauce in a tortilla.",
-#  "Images/Veggie-Wrap.jpg", 10, 3.25, 1),
+#  "Images/Veggie-Wrap.jpg", 45, 3.25, 1),
 
 # # Snacks
 # (6, "Crisps",
 #  "Lightly salted potato crisps in a small packet.",
-#  "Images/Crisps.jpg", 25, 1.00, 2),
+#  "Images/Crisps.jpg", 45, 1.00, 2),
 
 # (7, "Cheese Toastie",
 #  "Toasted bread filled with melted cheese.",
-#  "Images/Cheese-Toastie.jpg", 15, 2.25, 2),
+#  "Images/Cheese-Toastie.jpg", 45, 2.25, 2),
 
 # (8, "Chicken Nuggets",
 #  "Crispy chicken nuggets served as a small snack portion.",
-#  "Images/Chicken-Nuggets.jpg", 20, 2.50, 2),
+#  "Images/Chicken-Nuggets.jpg", 45, 2.50, 2),
 
 # (9, "Popcorn",
 #  "Lightly salted popcorn in a convenient snack bag.",
-#  "Images/Popcorn.jpg", 18, 1.50, 2),
+#  "Images/Popcorn.jpg", 45, 1.50, 2),
 
 # (10, "Fruit Cup",
 #  "A fresh selection of chopped seasonal fruit.",
-#  "Images/Fruit-Cup.jpg", 10, 2.00, 2),
+#  "Images/Fruit-Cup.jpg", 45, 2.00, 2),
 
 # # Drinks
 # (11, "Orange Juice",
 #  "Refreshing orange juice served chilled.",
-#  "Images/Orange-Juice.jpg", 15, 1.75, 3),
+#  "Images/Orange-Juice.jpg", 45, 1.75, 3),
 
 # (12, "Apple Juice",
 #  "Refreshing apple juice served chilled.",
-#  "Images/Apple-Juice.jpg", 15, 1.75, 3),
+#  "Images/Apple-Juice.jpg", 45, 1.75, 3),
 
 # (13, "Bottled Water",
 #  "Still mineral water served in a sealed bottle.",
-#  "Images/Bottled-Water.jpg", 30, 1.00, 3),
+#  "Images/Bottled-Water.jpg", 45, 1.00, 3),
 
 # (14, "Hot Chocolate",
 #  "Warm chocolate drink topped with a light foam.",
-#  "Images/Hot-Chocolate.jpg", 10, 2.25, 3),
+#  "Images/Hot-Chocolate.jpg", 45, 2.25, 3),
 
 # (15, "Iced Tea",
 #  "Chilled tea drink with a refreshing fruity flavour.",
-#  "Images/Iced-Tea.jpg", 12, 2.00, 3),
+#  "Images/Iced-Tea.jpg", 45, 2.00, 3),
 
 # # Desserts
 # (16, "Chocolate Brownie",
 #  "Soft chocolate brownie with a rich chocolate flavour.",
-#  "Images/Chocolate-Brownie.jpg", 12, 2.00, 4),
+#  "Images/Chocolate-Brownie.jpg", 45, 2.00, 4),
 
 # (17, "Chocolate Cookie",
 #  "Soft baked cookie containing chocolate pieces.",
-#  "Images/Chocolate-Cookie.jpg", 20, 1.50, 4),
+#  "Images/Chocolate-Cookie.jpg", 45, 1.50, 4),
 
 # (18, "Vanilla Muffin",
 #  "Soft vanilla muffin with a lightly sweet topping.",
-#  "Images/Vanilla-Muffin.jpg", 15, 1.75, 4),
+#  "Images/Vanilla-Muffin.jpg", 45, 1.75, 4),
 
 # (19, "Strawberry Yoghurt",
 #  "Creamy yoghurt with a sweet strawberry flavour.",
-#  "Images/Strawberry-Yoghurt.jpg", 10, 1.50, 4),
+#  "Images/Strawberry-Yoghurt.jpg", 45, 1.50, 4),
 
 # (20, "Chocolate Cake",
 #  "Moist chocolate cake with a smooth chocolate topping.",
-#  "Images/Chocolate-Cake.jpg", 8, 2.50, 4)
+#  "Images/Chocolate-Cake.jpg", 45, 2.50, 4)
 # ]
 
 # cursor.executemany("""
@@ -164,11 +164,14 @@ cursor.execute("PRAGMA foreign_keys = ON")
 #     (Item_ID, Item_Name, Item_Description, Image, Quantity, Price, Category_ID)
 #     VALUES (?, ?, ?, ?, ?, ?, ?)
 # """, menu_items)
-
+cursor.execute("UPDATE MenuItems SET Quantity = 11 WHERE Item_Name = 'Crisps' ")
 # Save changes
 conn.commit()
-
+results =cursor.execute("SELECT * FROM Orders").fetchall()
+r1 = cursor.execute("SELECT Item_Name,Quantity FROM MenuItems WHERE Item_name IN ('Margherita Pizza','Crisps') ").fetchall()
+r2 = cursor.execute("SELECT * FROM OrderItems").fetchall()
 # Close the connection
 conn.close()
-
-print("Table added created successfully!")
+print(r1)
+print(results)
+print(r2)

@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 from  DatabaseManager import DatabaseClass
 from PIL import ImageTk, Image
+import hashlib
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 class MainApp: # Initializing the MainApp class which serves as the controller
@@ -10,6 +11,7 @@ class MainApp: # Initializing the MainApp class which serves as the controller
         self.root.title("SAMOSA") # Screen Geometry
         self.root.geometry("800x600")
         self.database = DatabaseClass()
+        self.current_user = None # stores the users session
         # This dictionary would contain all GUI classes
         self.frames = {
             "login" : LoginFrame(self),
@@ -18,13 +20,15 @@ class MainApp: # Initializing the MainApp class which serves as the controller
             "orderhistory" : OrderHistoryFrame(self)
         }
 
-        self.show_frame(self.frames["customerframe"]) # Sets the current screen to show once application starts running
+        self.show_frame(self.frames["login"]) # Sets the current screen to show once application starts running
         
         self.root.mainloop()
 
     def show_frame(self,frame): # Function to show frames and prevent other frames from showing
         for current_frame in self.frames.values():
             current_frame.pack_forget()
+        if hasattr(frame,"on_show"):
+            frame.on_show()
         frame.pack(fill = "both", expand=True)
 
 
@@ -32,6 +36,7 @@ class MainApp: # Initializing the MainApp class which serves as the controller
 class LoginFrame(tk.Frame): # Login frame initialization
     def __init__(self,app):
         super().__init__(app.root) # Inherits the main root window as the place to be displayed
+
         self.app = app
         self.configure(background="#3a79ee")
 
@@ -63,13 +68,21 @@ class LoginFrame(tk.Frame): # Login frame initialization
         signupbtn.grid(row=3,column = 1, pady=5)
 
     def login(self):
-        access = self.app.database.Login(self.username_entry.get(),self.password_entry.get())
 
-        #self.password_entry.delete(0,tk.END)# Clearing the fields
-        #self.username_entry.delete(0,tk.END)
+        hashed_password = hashlib.sha256(self.password_entry.get().encode()).hexdigest()
+        Username = self.username_entry.get()
+        access = self.app.database.Login(self.username_entry.get(),hashed_password)
 
         if access == "Access granted":
             self.app.show_frame(self.app.frames["customerframe"])
+            USER_ID = self.app.database.get_user(Username)[0]
+            self.app.current_user = {
+                "ID" : USER_ID[0],
+                "USERNAME" : USER_ID[1],
+                "ROLE_ID"   : USER_ID[3]
+            }
+            self.password_entry.delete(0,tk.END)# Clearing the fields
+            self.username_entry.delete(0,tk.END)
         elif access == "Incorrect password":
             messagebox.showerror("Error Logging In", "Incorrect Password entered")
         elif access == "Username not found":
@@ -77,16 +90,25 @@ class LoginFrame(tk.Frame): # Login frame initialization
         elif access == "Invalid username":
             messagebox.showerror("Error Logging In", "Username is below 8 characters")
 
+
     def signup(self):
-            security = self.app.database.Signup(self.username_entry.get(),self.password_entry.get())
 
-            self.password_entry.delete(0,tk.END)# Clearing the fields
-            self.username_entry.delete(0,tk.END)
-
+            hashed_password = hashlib.sha256(self.password_entry.get().encode()).hexdigest()
+            security = self.app.database.Signup(self.username_entry.get(),hashed_password)
+            Username = self.username_entry.get()
             if security:
+                USER_ID = self.app.database.get_user(Username)[0]
+                self.app.current_user = {
+                    "ID" : USER_ID[0],
+                    "USERNAME" : USER_ID[1],
+                    "ROLE_ID"   : USER_ID[3]
+                }
+                self.password_entry.delete(0,tk.END)# Clearing the fields
+                self.username_entry.delete(0,tk.END)
                 self.app.show_frame(self.app.frames["customerframe"])
-                
             else:
+                self.password_entry.delete(0,tk.END)# Clearing the fields
+                self.username_entry.delete(0,tk.END)
                 messagebox.showerror("Error Signing Up", "Inputs are below 8 characters or Username already exists")
     #print("Login Frame Initialized")
 
@@ -102,7 +124,7 @@ class CustomerFrame(tk.Frame): # Customer frame initialization
         self.category = []
         self.current_items = []
 
-        self.cartframe= CartFrame(self) # Linking cart frame as a sub class of customer frame
+        self.cartframe= CartFrame(self,app) # Linking cart frame as a sub class of customer frame
         self.cartframe.place_forget() # Hiding the cart frame
 
         header_frame = tk.Frame(self,bg ="red") # creating header frame for header
@@ -203,7 +225,7 @@ class CustomerFrame(tk.Frame): # Customer frame initialization
         self.cartframe.lift()
         #print("cart")
     def logout(self):
-        # Normally you'd check the database here.
+        self.app.current_user = None
         self.app.show_frame(self.app.frames["login"]) 
 
     def display_items(self,items):
@@ -274,8 +296,10 @@ class CustomerFrame(tk.Frame): # Customer frame initialization
         self.display_items(self.current_items)
 
 class CartFrame(tk.Frame): # Cart frame initialization
-    def __init__(self,parent):
+    def __init__(self,parent,app):
         super().__init__(parent) # Inherits the CustomerFrame window as the place to be displayed
+        self.app = app
+        self.cutomerframe = parent
         self.cart_items = []
         self.cart_item_cards = []
         self.configure(background="brown",width=400,height=400)
@@ -291,7 +315,33 @@ class CartFrame(tk.Frame): # Cart frame initialization
         checkout_btn = tk.Button(self.cart_scroll.content_frame,text = "Checkout", command=self.checkout)
         checkout_btn.grid(row = 0,column = 1)
 
+    def price(self):
+        total_price = 0
+        for item in self.cart_items:
+            price = item[2] * item[3]
+            total_price += price
+        return total_price
+    
     def checkout(self):
+        if self.cart_items == []:
+            messagebox.showerror("Invalid Request", "Can not checkout on an empty cart")
+        else:
+           print(self.cart_items)
+           request = messagebox.askyesno("Checkout Request", f"Are you sure you want to check out? You total price is £{self.price()}")
+           if request:
+                print("YES")
+                user_id = self.app.current_user["ID"]
+                result = self.app.database.checkout(user_id,self.cart_items)
+                print(result)
+                if result == "SUCCESS":
+                    order_num = self.app.database.get_order_id()
+                    messagebox.showinfo("Congratulations!", f"Your order has been made!!. Your Order Number is {order_num}")
+                    self.clear_cart()
+                    self.empty_cart_list()
+                    self.cutomerframe.refresh_menu()
+                    self.close()
+                elif result == "FAILED":
+                    messagebox.showerror("Invalid Request", "Sorry we are expereincing some errors right now please try again.")          
         self.close()
 
     def close(self):
@@ -323,6 +373,9 @@ class CartFrame(tk.Frame): # Cart frame initialization
         self.clear_cart() # Destroy all widgets on screen
         self.display_cart() # Redrwaw screen.
 
+    def empty_cart_list(self):
+        for item in self.cart_items:
+            self.cart_items.remove(item)
 
 class SettingsFrame(tk.Frame): # Settings frame initialization
     def __init__(self,app):
@@ -332,7 +385,6 @@ class SettingsFrame(tk.Frame): # Settings frame initialization
 
         header_frame = tk.Frame(self)
         header_frame.pack()
-
         msg = tk.Label(self,text= "Welcome to the settings page", anchor="center", font=("Arial",20), bg = "grey")
         msg.pack(pady=10)
 
@@ -342,30 +394,60 @@ class SettingsFrame(tk.Frame): # Settings frame initialization
         user_label = tk.Label(content_frame,text="  Username:  ",font=("Arial",20),bg="grey")
         user_label.grid(row=0,column=0,padx=10,pady=10)
 
-        user_entry = tk.Entry(content_frame,width=40)
-        user_entry.grid(row=0,column= 1,padx= 20,pady=50)
+        self.user_entry = tk.Entry(content_frame,width=40)
+        self.user_entry.grid(row=0,column= 1,padx= 20,pady=50)
 
-        password_label = tk.Label(content_frame,text="  Current password:  ",font=("Arial",20),bg="grey")
-        password_label.grid(row=1,column=0,padx=10,pady=10)
+        password_label1 = tk.Label(content_frame,text="  New password:  ",font=("Arial",20),bg="grey")
+        password_label1.grid(row=1,column=0,padx=10,pady=10)
         
-        password_entry = tk.Entry(content_frame,width=40)
-        password_entry.grid(row=1,column= 1,padx= 20,pady= 50)
+        self.password1_entry = tk.Entry(content_frame,width=40,show="*")
+        self.password1_entry.grid(row=1,column= 1,padx= 20,pady= 50)
 
-        new_password_label = tk.Label(content_frame,text="  New password:  ",font=("Arial",20),bg="grey")
-        new_password_label.grid(row=3,column=0,padx=10,pady=10)
+        self.password2_label = tk.Label(content_frame,text="  Re-enter New password:  ",font=("Arial",20),bg="grey")
+        self.password2_label.grid(row=3,column=0,padx=10,pady=10)
                 
-        new_password_entry = tk.Entry(content_frame,width=40)
-        new_password_entry.grid(row=3,column= 1,padx= 20,pady=50)
+        self.password2_entry = tk.Entry(content_frame,width=40,show="*")
+        self.password2_entry.grid(row=3,column= 1,padx= 20,pady=50)
 
-        new_pass_btn = tk.Button(content_frame,text="Change password")#, command= self.change_password)
+        new_pass_btn = tk.Button(content_frame,text="Change password", command= self.change_password)
         new_pass_btn.grid(row=3,column=2, padx= 10,pady=10)
 
         back_btn = tk.Button(content_frame,text="Back", command= self.back_menu)
         back_btn.grid(row=4,column=1, padx= 10,pady=30)
 
+    def on_show(self):
+        user = self.app.current_user
+
+        if user is None:
+            return
+
+        self.user_entry.config(state="normal")
+        self.user_entry.delete(0, tk.END)
+        self.user_entry.insert(0, user["USERNAME"])
+        self.user_entry.config(state="readonly")
+    
+
     def back_menu(self):
         self.app.show_frame(self.app.frames["customerframe"])
 
+    def change_password(self):
+        first_entry = self.password1_entry.get()
+        second_entry = self.password2_entry.get()
+        if first_entry == "" or second_entry == "":
+            messagebox.showerror("Error", "Makes sure both fields have been filled")
+        else:
+            if self.app.database.validate(first_entry) and self.app.database.validate(second_entry):
+                if first_entry == second_entry:
+                    hashed_password = hashlib.sha256(first_entry.encode()).hexdigest() 
+                    new_entry = self.app.database.change_password(self.app.current_user["ID"],hashed_password)
+                    if new_entry == "SAME PASSWORD":
+                        messagebox.showerror("Notice","Your new password is the same as the previous one try something different!")
+                    elif new_entry == "PASSWORD CHANGED":
+                        messagebox.showinfo("Password changed", "Congratulations you have now changed your password. NOTE: Please don't forget it")
+                else:
+                    messagebox.showerror("Error","Make sure New passwords entered are the same")
+            else:
+                messagebox.showerror("Error","Make sure password entered is at least 8 characters")
 
 
 class OrderHistoryFrame(tk.Frame): # Order history frame initialization
@@ -414,7 +496,8 @@ class ScrollableFrame(tk.Frame): # Initialize class
 class ItemCard(tk.Frame): # Initializes the class
     def __init__(self, parent,cartframe, item_id, name, description, image, price): # All the parameters
         super().__init__(parent) # Inherits from the customer frame class
-        self.configure(background="orange",width =200,height=230)
+        self.BG = "orange"
+        self.configure(background=self.BG,width =200,height=250)
         self.grid_propagate(False)
         self.cartframe = cartframe
         self.item_id = item_id
@@ -426,9 +509,13 @@ class ItemCard(tk.Frame): # Initializes the class
         self.image = self.image_resize(self.old_image)
         self.quantity = 0
 
-        
+        self.stock_level = self.cartframe.app.database.get_quantity(self.item_id)
+
+        self.warning = ""
+        self.display_stock_text()
 
         self.clickable_widgets(self)
+
         
         img = tk.Label(self,image=self.image, anchor="center",justify="center")
         img.grid(row=1,column=0,columnspan=2,padx=13,pady=5)
@@ -446,10 +533,22 @@ class ItemCard(tk.Frame): # Initializes the class
         price.grid(row=3,column=0,columnspan=2,padx=13,pady=5)
         self.clickable_widgets(price)
 
-        
+        stock_level_label = tk.Label(self,text=self.warning,anchor="center")
+        stock_level_label.grid(row=4,column=0,columnspan=2,padx=13,pady=5)
+        self.clickable_widgets(stock_level_label)
 
     def clickable_widgets(self,widget):
-        widget.bind("<Button-1>",self.open_popup)
+        if self.stock_level > 10:
+            widget.bind("<Button-1>",self.open_popup)
+        else:
+            self.BG = "grey"
+            self.configure(background=self.BG,width =200,height=250)
+
+    def display_stock_text(self):
+        if self.stock_level > 10:
+            self.warning = f"{self.stock_level} portions remaining"
+        else:
+            self.warning = "Item Unavaiable"
 
     def open_popup(self,event):
         if self.popup != None:
