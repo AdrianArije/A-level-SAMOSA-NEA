@@ -149,12 +149,35 @@ class DatabaseClass:
             
             overall_price += price
         
+        try:
+            self.create_order(user_id,overall_price,ordertime,False)
+            self.add_orderitems(cart_items)
+            self.update_stock(cart_items)
+            self.connection.commit()
+            return "SUCCESS"
+        except:
+            self.connection.rollback()
+            return "FAILED"
 
-        self.create_order(user_id,overall_price,ordertime,False)
-        self.add_orderitems(cart_items)
-        self.update_stock(cart_items)
-        self.connection.commit()
-        return "SUCCESS"
+    def get_orders(self,user_id):
+        result = self.cursor.execute("SELECT Order_ID FROM Orders WHERE User_ID = ?",(user_id,)).fetchall() # get list of users orders
+        return result
+
+    def get_order_items(self,order_number):
+        data = self.cursor.execute("SELECT Item_ID, Quantity, Price FROM OrderItems WHERE Orders_ID = ?",(order_number,)).fetchall() # get item_id, quantity and price
+        return data
+
+    def order_history(self,item_list):
+        overall_order = [] # list format
+        for item in item_list:
+            item_id = item[0]
+            item_qty = item[1]
+            item_price = item[2]
+            item_name = self.cursor.execute("SELECT Item_Name FROM MenuItems WHERE Item_ID = ?",(item_id,)).fetchall() # item name
+            invoice = (item_name,item_qty,item_price)
+            overall_order.append(invoice)
+        return overall_order
+
 
 
 

@@ -335,7 +335,7 @@ class CartFrame(tk.Frame): # Cart frame initialization
                 print(result)
                 if result == "SUCCESS":
                     order_num = self.app.database.get_order_id()
-                    messagebox.showinfo("Congratulations!", f"Your order has been made!!. Your Order Number is {order_num}")
+                    messagebox.showinfo("Congratulations!", f"Your order has been made!!. Your Order Number is #{order_num}")
                     self.clear_cart()
                     self.empty_cart_list()
                     self.cutomerframe.refresh_menu()
@@ -455,18 +455,54 @@ class OrderHistoryFrame(tk.Frame): # Order history frame initialization
         super().__init__(app.root) # Inherits the main root window as the place to be displayed
         self.app = app
         self.configure(background="brown")
+        self.history_cards = []
 
-        hearder_frame = tk.Frame(self,bg= "brown")
-        hearder_frame.pack()
+        header_frame = tk.Frame(self,bg= "brown")
+        header_frame.pack()
 
         content_frame = tk.Frame(self,bg="brown")
         content_frame.pack(fill="both", expand=True)
 
-        intro = tk.Label(hearder_frame,text="  Welcome to your order history  ",anchor="center", font=("Arial",20), bg = "brown")
-        intro.pack()
+        self.orderhistory_scroll = ScrollableFrame(content_frame, bg="brown")
+        self.orderhistory_scroll.pack(fill="both", expand=True)
 
-        back_btn = tk.Button(hearder_frame,text="Back", command= self.back_menu)
-        back_btn.pack(pady=30)
+        header_frame.columnconfigure(1, weight=5)
+        header_frame.columnconfigure(0, weight=2)
+        header_frame.columnconfigure(2, weight=2)
+
+        intro = tk.Label(header_frame,text="  Welcome to the Order History Page ",anchor="center", font=("Arial",20), bg = "brown")
+        intro.grid(row=0,column=1)
+
+        note = tk.Label(header_frame,text=" NOTE: Always refresh this page for new updates to history ",anchor="center", font=("Arial",10), bg = "grey")
+        note.grid(row=1,column=1)
+
+        back_btn = tk.Button(header_frame,text="Back", command= self.back_menu)
+        back_btn.grid(row=0,column= 0,padx=5)
+
+        refresh_btn = tk.Button(header_frame,text="Refresh", command= self.refresh)
+        refresh_btn.grid(row=0,column=2,padx=5)
+
+
+    def display(self):
+        user_id = self.app.current_user["ID"] # get user id
+        orders = self.app.database.get_orders(user_id) # get all order numbers
+        index = 0
+        for order in orders: # loop through the orders
+            order_num = order[0]
+            items = self.app.database.get_order_items(order_num) # get the items
+            odr_hist = self.app.database.order_history(items) # convert them to displayable format
+            row_num = index // 3
+            col_num = index % 3
+            card = order_history_card(self.orderhistory_scroll.content_frame,order_num,odr_hist) # make them a card object
+            card.grid(row=row_num,column=col_num,padx=30,pady=10) # place on screen
+            self.history_cards.append(card)
+            index+= 1
+
+    def refresh(self):
+        for card in self.history_cards:
+            card.destroy()
+        self.history_cards.clear()
+        self.display()
 
     def back_menu(self):
         self.app.show_frame(self.app.frames["customerframe"])
@@ -611,11 +647,8 @@ class Cart_item_card(tk.Frame):
         self.popup = None
         self.cartframe = cartframe
         
-
-        
         name = tk.Label(self,text = self.name, anchor="center")
         name.grid(row=0,column=0,columnspan=2,padx=13,pady=5)
-
 
         value = self.price * self.quantity
         price = tk.Label(self, text=f"Price: £{value:.2f}", anchor="center")
@@ -631,6 +664,88 @@ class Cart_item_card(tk.Frame):
     def remove_item(self):
         self.cartframe.remove_item(self.item_id)
        
-    
-    
+
+class order_history_card(tk.Frame):
+    def __init__(self,parent,order_number,order_list):
+        super().__init__(parent)
+        self.configure(background="orange",width =200,height=200)
+        self.grid_propagate(False)
+        self.order_number = order_number
+        self.order_list = order_list
+        self.popup = None
+
+        self.clickable_widgets(self)
+
+        order_text = tk.Label(self,text = f"ORDER #{self.order_number} Details",font=15,anchor="center",bg = "orange")
+        order_text.pack(pady= 10,padx= 10)
+        self.clickable_widgets(order_text)
+
+    def clickable_widgets(self,widget):
+        widget.bind("<Button-1>",self.open_popup)
+
+    def open_popup(self,event):
+        if self.popup != None:
+            return 
+        self.popup = tk.Toplevel(self)
+        self.popup.title(f"Order Number #{self.order_number}")
+        self.popup.geometry("300x350")
+        self.popup.config(bg ="white")
+
+        header_frame = tk.Frame(self.popup,bg="white") # main header
+        header_frame.pack(fill="x")
+
+        content_frame = tk.Frame(self.popup,bg="white") # content frame
+        content_frame.pack(fill="both", expand=True)
+        
+        self.popup_scroll = ScrollableFrame(content_frame, bg="white") # making the content frame scrollable
+        self.popup_scroll.pack(fill="both", expand=True)
+
+        title_label = tk.Label(header_frame,text= f"Order Receipt #{self.order_number}",bg = "white") # title the popup widget
+        title_label.pack(pady=10)
+
+        grid_frame = tk.Frame(self.popup_scroll.content_frame,bg="black",bd=0) # the grid for the black lines
+        grid_frame.pack(fill="x",padx=15,pady=5)
+
+        grid_frame.columnconfigure(0, weight=3) # Item Name
+        grid_frame.columnconfigure(1, weight=1) # Qty
+        grid_frame.columnconfigure(2, weight=1) # Price
+
+        name_label = tk.Label(grid_frame, text = "Item Name",bg = "white",anchor = "w")
+        name_label.grid(row=0, column=0, sticky="nsew", padx=(0, 1), pady=(0, 2))
+
+        qty_label = tk.Label(grid_frame, text = "Quantity",bg = "white",anchor = "e")
+        qty_label.grid(row=0, column=1, sticky="nsew", padx=(0, 1), pady=(0, 2))
+
+        price_label = tk.Label(grid_frame, text = "Price",bg = "white",anchor = "e")
+        price_label.grid(row=0, column=2, sticky="nsew", padx=(0, 1), pady=(0, 2))
+
+        row = 1
+        total_price = 0
+        for order in self.order_list: # loop through the returned items list and display all the info
+            name = order[0]
+            qty = order[1]
+            price = order[2]
+
+            item_name = tk.Label(grid_frame,text = name,bg = "white",anchor = "w")   
+            item_name.grid(row=row, column=0, sticky="nsew", padx=(0, 1), pady=(0, 1))
+
+            item_qty = tk.Label(grid_frame,text = qty,bg = "white",anchor = "e")   
+            item_qty.grid(row=row, column=1, sticky="nsew", padx=(0, 1), pady=(0, 1))
+
+            item_price = tk.Label(grid_frame,text = price,bg = "white",anchor = "e")   
+            item_price.grid(row=row, column=2, sticky="nsew", padx=(0, 1), pady=(0, 1))
+
+            row += 1
+            total_price += price
+
+        totals_frame = tk.Frame(self.popup,bg = "white") # totals frame
+        totals_frame.pack(fill="x",padx=15,pady=15)
+
+        tk.Label(totals_frame,text = "TOTAL:",bg = "white").pack(side="left")
+        tk.Label(totals_frame,text = f"£{total_price}",bg = "white").pack(side="right")
+        self.popup.protocol("WM_DELETE_WINDOW",self.close_popup)
+
+    def close_popup(self):
+        self.popup.destroy()
+        self.popup = None
 MainApp()
