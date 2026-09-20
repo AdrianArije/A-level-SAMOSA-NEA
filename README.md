@@ -15,3 +15,9 @@ An interactive online ordering system prototype. Built for students and school s
 - Kitchen order management
 - Admin dashboard - Add, delete and update stock
 - Secure accounts and passwords.
+
+## How to run
+
+- Download all the assets in the same folder
+- Install Pillow python module
+- Run GUI.py
