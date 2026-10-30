@@ -179,9 +179,36 @@ class DatabaseClass:
         return overall_order
 
 
+    def add_items(self,name,desc,image,qty,price,cty):
+        check_validity = self.cursor.execute("""
+        SELECT * FROM MenuItems
+        WHERE Item_Name = ?
+        """,(name,)).fetchall()
+        cty_id = self.cursor.execute("SELECT Category_ID FROM Categories WHERE Category_Name = ?",(cty,)).fetchone()
+        if check_validity:
+            return "Item name Exists"
+        else:
+            self.cursor.execute("""INSERT INTO MenuItems (Item_Name,Item_Description,Image,Quantity,Price,Category_ID)
+            VALUES (?,?,?,?,?,?)""",(name,desc,"Images/No-image.jpg",qty,price,cty_id[0]))
+            self.connection.commit()
+            return "Item Added"
+            
 
 
+    def admin_orders_db(self):
+        total_orders = self.cursor.execute("SELECT Order_ID FROM Orders").fetchall()
+        return total_orders
 
 
+    def status(self,id):
+        st = self.cursor.execute("""
+                SELECT Status FROM Orders WHERE Order_ID == ?
+""",(id,)).fetchone()
+        return st
+
+
+    def chg_stat(self,id):
+        self.cursor.execute("UPDATE Orders SET Status = True WHERE Order_ID = ?",(id,))
+        self.connection.commit()
 
     

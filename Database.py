@@ -168,8 +168,9 @@ cursor.execute("PRAGMA foreign_keys = ON")
 conn.commit()
 #results =cursor.execute("SELECT * FROM Orders").fetchall()
 #r1 = cursor.execute("SELECT Item_Name,Quantity FROM MenuItems WHERE Item_name IN ('Margherita Pizza','Crisps') ").fetchall()
-r2 = cursor.execute("SELECT Order_ID FROM Orders WHERE User_ID = 2").fetchall()
-r3 = cursor.execute("SELECT * FROM OrderItems WHERE Orders_ID = 1").fetchall()
+r2 = cursor.execute("""SELECT Category_ID FROM Categories 
+                        WHERE Category_Name = 'Meals'""").fetchone()
+r3 = cursor.execute("SELECT Status FROM Orders").fetchall()
 # Close the connection
 conn.close()
 #print(r1)
