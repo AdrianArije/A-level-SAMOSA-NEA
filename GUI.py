@@ -1,9 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+from tkinter import simpledialog
 from  DatabaseManager import DatabaseClass
 from PIL import ImageTk, Image
 import hashlib
+import random
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 class MainApp: # Initializing the MainApp class which serves as the controller
@@ -11,8 +13,12 @@ class MainApp: # Initializing the MainApp class which serves as the controller
         self.root = tk.Tk()
         self.root.title("SAMOSA") # Screen Geometry
         self.root.geometry("800x600")
+        self.root.resizable(False, False)
         self.database = DatabaseClass()
         self.current_user = None # stores the users session
+        self.orange = "#F2842F"
+        self.lightblue = "#455B8A"
+        self.darkblue = "#30497D"
         # This dictionary would contain all GUI classes
         self.frames = {
             "login" : LoginFrame(self),
@@ -20,12 +26,14 @@ class MainApp: # Initializing the MainApp class which serves as the controller
             "settings" : SettingsFrame(self),
             "orderhistory" : OrderHistoryFrame(self),
             "additem": AddItem(self),
-            "adminorders" : showOrders(self)
+            "adminorders" : showOrders(self),
+            "updateitems" : UpdateItem(self),
+            "deleteitems" : DeleteItem(self)
         }
 
         self.show_frame(self.frames["login"]) # Sets the current screen to show once application starts running
         
-        self.root.mainloop()
+        self.root.mainloop() # Starts the program loop
 
     def show_frame(self,frame): # Function to show frames and prevent other frames from showing
         for current_frame in self.frames.values():
@@ -41,33 +49,48 @@ class LoginFrame(tk.Frame): # Login frame initialization
         super().__init__(app.root) # Inherits the main root window as the place to be displayed
 
         self.app = app
-        self.configure(background="#3a79ee")
 
-        intro = tk.Label(self,text = "Welcome to Adrian's Canteen ",font= ("Arial", 43),bg="#3a79ee", foreground="#fbf025") # Intro text label
-        intro.grid(row=0,column = 1,columnspan=3, padx = 10, pady =15)
+        pics = ["Images/login-bg.jpg","Images/login-bg2.jpg","Images/login-bg3.png"]
+        random_pic = random.choice(pics)
 
+
+        login_img_open = Image.open(random_pic).resize((800,600))
+        login_image= ImageTk.PhotoImage(login_img_open)
+
+        bg_label = tk.Label(self,image=login_image)
+        bg_label.place(x=0,y=0,relwidth=1, relheight=1)
+        bg_label.image = login_image
+
+        canvas = tk.Canvas(self, width=800, height=600, highlightthickness=0)
+        canvas.place(x=0, y=0)
+        canvas.create_image(0, 0, image=login_image, anchor="nw")
+        canvas.create_text(400, 50,text="Welcome to SAMOSA",fill=self.app.orange,font=("Arial", 40, "bold"))
+        canvas.create_text(400, 100,text="(Sales And Ordering Mangaement System by AD)",fill=self.app.orange,font=("Arial", 20, "bold"))
+
+        
         self.entry_frame = tk.Frame(self) # Creating new frame for entry widgets
-        self.entry_frame.place(x=300,y=220)
+        self.entry_frame.place(x=280,y=220)
+        self.entry_frame.configure(background=self.app.darkblue)
 
-        lgntext = tk.Label(self.entry_frame,text = "    Login In / Sign up    ",font= ("Arial", 20)) # Login label
+        lgntext = tk.Label(self.entry_frame,text = "    Login In / Sign up    ",font= ("Arial", 20,"bold"),background=self.app.darkblue,foreground=self.app.orange) # Login label
         lgntext.grid(row=0,column = 0, columnspan=2)
 
-        username_label = tk.Label(self.entry_frame,text = "Username",font = ("Arial",10)) # Username label
+        username_label = tk.Label(self.entry_frame,text = "Username",font = ("Arial",10,"bold"),background=self.app.darkblue,foreground=self.app.orange) # Username label
         username_label.grid(row=1,column = 0)
 
         self.username_entry =tk.Entry(self.entry_frame,width=20) # Username entry box
         self.username_entry.grid(row=1,column = 1, padx = 12, pady =10)
 
-        password_label = tk.Label(self.entry_frame,text = "Password",font = ("Arial",10)) # Password entry label
+        password_label = tk.Label(self.entry_frame,text = "Password",font = ("Arial",10,"bold"),background=self.app.darkblue,foreground=self.app.orange) # Password entry label
         password_label.grid(row=2,column = 0)
 
         self.password_entry =tk.Entry(self.entry_frame,width=20,show="*") # Password entry box
         self.password_entry.grid(row=2,column = 1, padx = 12, pady =10)
 
-        loginbtn = tk.Button(self.entry_frame, text="Login", command=self.login) # Login button
+        loginbtn = tk.Button(self.entry_frame, text="Login", command=self.login,background=self.app.orange) # Login button
         loginbtn.grid(row=3,column = 0, pady=10)
 
-        signupbtn = tk.Button(self.entry_frame, text="Sign Up", command=self.signup) # Sign up button
+        signupbtn = tk.Button(self.entry_frame, text="Sign Up", command=self.signup,background=self.app.orange) # Sign up button
         signupbtn.grid(row=3,column = 1, pady=5)
 
     def login(self): # The login function to verify users login
@@ -123,48 +146,49 @@ class OrderFrame(tk.Frame): # Customer frame initialization
     def __init__(self,app):
         super().__init__(app.root) # Inherits the main root window as the place to be displayed
         self.app = app # Link to the main app handler
-        self.configure(background="red") # background colour
+        self.configure(background=self.app.lightblue) # background colour
         self.cards = [] # Stores all the cards on the screen
         self.search_text = "" # user input text for searching
         self.category = [] # the categories selected
         self.current_items = [] # Stores all the items on the screen 
 
+
         self.cartframe= CartFrame(self,app) # Linking cart frame as a sub class of customer frame
         self.cartframe.place_forget() # Hiding the cart frame
 
-        header_frame = tk.Frame(self,bg ="red") # creating header frame for header
+        header_frame = tk.Frame(self,bg =self.app.lightblue) # creating header frame for header
         header_frame.pack(fill="x")
 
 
-        content_frame = tk.Frame(self, bg="yellow") # Creating content frame for items
+        content_frame = tk.Frame(self, bg=self.app.orange) # Creating content frame for items
         content_frame.pack(fill="both", expand=True)
 
-        toolbar_frame = tk.Frame(content_frame, bg="yellow")
+        toolbar_frame = tk.Frame(content_frame, bg=self.app.lightblue)
         toolbar_frame.pack(fill="x")
 
-        self.menu_scroll = ScrollableFrame(content_frame, bg="brown")
+        self.menu_scroll = ScrollableFrame(content_frame, bg=self.app.lightblue)
         self.menu_scroll.pack(fill="both", expand=True)
         
 
-        self.toggle_options = tk.Button(header_frame,text = "☰",bg="red", foreground="#fffffd",anchor="center",font = ("Bold",20),
-                                        activebackground="red",
+        self.toggle_options = tk.Button(header_frame,text = "☰",bg=self.app.orange, foreground="#fffffd",anchor="center",font = ("Bold",20),
+                                        activebackground=self.app.lightblue,
                                         activeforeground="white",
                                         command=self.side_panel,bd=2,
                                         highlightbackground="black",
                                         highlightthickness=5,relief="raised") # creating the toggle button widget
         self.toggle_options.pack(side=tk.LEFT)
 
-        intro = tk.Label(header_frame,text = "Welcome to the order page",font= ("Arial", 27),bg="red", foreground="#fbf025",anchor="center") # Intro text
+        intro = tk.Label(header_frame,text = "Welcome to the order page",font= ("Arial", 27),bg=self.app.lightblue, foreground=self.app.orange,anchor="center") # Intro text
         intro.pack(padx= 100,side=tk.LEFT) # Intro label
 
 
         self.search_entry = tk.Entry(toolbar_frame, width=90) # Search entry box
         self.search_entry.grid(row=0, column=0, padx = 25)
 
-        searchbtn = tk.Button(toolbar_frame, text="Search", command=self.refresh_menu) # Search button
+        searchbtn = tk.Button(toolbar_frame, text="Search",bg=self.app.orange, command=self.refresh_menu) # Search button
         searchbtn.grid(row=0, column=1,padx = 5)
 
-        sort_btn = tk.Menubutton(toolbar_frame,text = "Sort By ▼", relief="raised") # Adding the sort button menu
+        sort_btn = tk.Menubutton(toolbar_frame,text = "Sort By ▼", relief="raised",bg=self.app.orange) # Adding the sort button menu
         sort_btn.grid(row=0,column=3, padx=5) # Set position
         sort_dropdown = tk.Menu(sort_btn,tearoff=0)
         sort_dropdown.add_command(label = "By Price ASC",command = self.filterprice_asc) # Adding sorting button
@@ -199,50 +223,50 @@ class OrderFrame(tk.Frame): # Customer frame initialization
         filter_btn = tk.Button(toolbar_frame,text ="Filter ▼", command = self.filterbutton) # Filter button
         filter_btn.grid(row=0,column=2,padx= 5)
 
-        self.filter_action = tk.Button(self.filter_frame,text ="Filter", command = self.filter_action)
+        self.filter_action = tk.Button(self.filter_frame,text ="Filter", command = self.filter_action,bg=self.app.orange)
         self.filter_action.grid(row=4,column = 0)
         
 
         self.refresh_menu() # Refresh the menu once user logs in
 
     def side_panel(self): # Side panel for the options
-        self.toggle_frame = tk.Frame(self,bg="grey") # configuring the button coordinates and position
+        self.toggle_frame = tk.Frame(self,bg=self.app.orange) # configuring the button coordinates and position
         self.toggle_frame.place(x=0,y=60,height=350,width=200)
         self.toggle_options.config(text =" X ",font = ("Bold",20))
         self.toggle_options.config(command =self.collapse_panel)
 
         y_axis = 20
 
-        cart_btn = tk.Button(self.toggle_frame, text="CART",font = ("Bold",15),bd=0,bg="grey",fg="white",activebackground="grey",activeforeground="white",command = self.cart)
+        cart_btn = tk.Button(self.toggle_frame, text="CART",font = ("Bold",15),bd=0,bg=self.app.orange,fg="white",activebackground="grey",activeforeground="white",command = self.cart)
         cart_btn.place(x=20,y=y_axis) # Creating and placing the cart button
         y_axis+= 40
 
-        orderhistory_btn = tk.Button(self.toggle_frame, text="ORDER HISTORY",font = ("Bold",15),bd=0,bg="grey",fg="white",activebackground="grey",activeforeground="white",command = self.orderpage)
+        orderhistory_btn = tk.Button(self.toggle_frame, text="ORDER HISTORY",font = ("Bold",15),bd=0,bg=self.app.orange,fg="white",activebackground="grey",activeforeground="white",command = self.orderpage)
         orderhistory_btn.place(x=20,y=y_axis) # Creating and pplacing the order history button
         y_axis+=40
 
-        settings_btn = tk.Button(self.toggle_frame, text="SETTINGS",font = ("Bold",15),bd=0,bg="grey",fg="white",activebackground="grey",activeforeground="white",command = self.settings)
+        settings_btn = tk.Button(self.toggle_frame, text="SETTINGS",font = ("Bold",15),bd=0,bg=self.app.orange,fg="white",activebackground="grey",activeforeground="white",command = self.settings)
         settings_btn.place(x=20,y=y_axis) # Creating and placing the settings button
         y_axis+=40
 
         if self.app.current_user["ROLE_ID"] == 2: # Checking the status of the user
-            add_item_btn = tk.Button(self.toggle_frame, text="ADD ITEM",font = ("Bold",15),bd=0,bg="grey",fg="white",activebackground="grey",activeforeground="white",command = self.additems)
+            add_item_btn = tk.Button(self.toggle_frame, text="ADD ITEM",font = ("Bold",15),bd=0,bg=self.app.orange,fg="white",activebackground="grey",activeforeground="white",command = self.additems)
             add_item_btn.place(x=20,y=y_axis) # Creating the add items button for admins
             y_axis+=40
 
-            delete_item_btn = tk.Button(self.toggle_frame, text="DELETE ITEM",font = ("Bold",15),bd=0,bg="grey",fg="white",activebackground="grey",activeforeground="white")
+            delete_item_btn = tk.Button(self.toggle_frame, text="DELETE ITEM",font = ("Bold",15),bd=0,bg=self.app.orange,fg="white",activebackground="grey",activeforeground="white",command= self.delete_all)
             delete_item_btn.place(x=20,y=y_axis) # Creating the delete items button for admins
             y_axis+=40
 
-            upd_item_btn = tk.Button(self.toggle_frame, text="UPDATE ITEM",font = ("Bold",15),bd=0,bg="grey",fg="white",activebackground="grey",activeforeground="white")
+            upd_item_btn = tk.Button(self.toggle_frame, text="UPDATE ITEM",font = ("Bold",15),bd=0,bg=self.app.orange,fg="white",activebackground="grey",activeforeground="white", command = self.update_items)
             upd_item_btn.place(x=20,y=y_axis) # Creating the update items button for admins
             y_axis+=40
 
-            view_orders_btn = tk.Button(self.toggle_frame, text="VIEW ORDERS",font = ("Bold",15),bd=0,bg="grey",fg="white",activebackground="grey",activeforeground="white", command = self.admin_orders)
+            view_orders_btn = tk.Button(self.toggle_frame, text="VIEW ORDERS",font = ("Bold",15),bd=0,bg=self.app.orange,fg="white",activebackground="grey",activeforeground="white", command = self.admin_orders)
             view_orders_btn.place(x=20,y=y_axis) # Creating the view order items button for admins
             y_axis+=40
 
-        logout_btn = tk.Button(self.toggle_frame, text="LOGOUT",font = ("Bold",15),bd=0,bg="grey",fg="white",activebackground="grey",activeforeground="white",command = self.logout)
+        logout_btn = tk.Button(self.toggle_frame, text="LOGOUT",font = ("Bold",15),bd=0,bg=self.app.orange,fg="white",activebackground="grey",activeforeground="white",command = self.logout)
         logout_btn.place(x=20,y=y_axis) # Creating the logout button 
 
     def collapse_panel(self): # Collapsing the toggle options tab
@@ -281,6 +305,8 @@ class OrderFrame(tk.Frame): # Customer frame initialization
     def admin_orders(self):
         self.app.show_frame(self.app.frames["adminorders"])
 
+    def update_items(self):
+        self.app.show_frame(self.app.frames["updateitems"])
 
     def cart(self): # Displaying the cart on the screen
         self.collapse_panel()
@@ -312,9 +338,12 @@ class OrderFrame(tk.Frame): # Customer frame initialization
         
     def refresh_menu(self): # refresh the menu
         word = self.search_entry.get() # get user search word
-        self.clear_menu()
         self.current_items = self.app.database.display_menu(word,self.category)# search the database for all items linked to the word
-        self.display_items(self.current_items) # display the items
+        if self.current_items:
+            self.clear_menu()
+            self.display_items(self.current_items) # display the items
+        else:
+            messagebox.showerror("No items Found","Sorry no items where found")
 
     def clear_menu(self): # clar menu
         for card in self.cards:
@@ -362,6 +391,15 @@ class OrderFrame(tk.Frame): # Customer frame initialization
                     self.current_items[i + 1]= temp
         self.display_items(self.current_items)
 
+
+    def delete_all(self):
+        verify = simpledialog.askstring("Access Code Required", "Enter the 8 digit access code to progress: ")
+        if verify == "JASPERA1":
+            self.app.show_frame(self.app.frames["deleteitems"])
+        else:
+            messagebox.showerror("Access failed","Invalid Code")
+
+
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 class CartFrame(tk.Frame): # Cart frame initialization
     def __init__(self,parent,app):
@@ -370,11 +408,11 @@ class CartFrame(tk.Frame): # Cart frame initialization
         self.cutomerframe = parent
         self.cart_items = [] # stores all the cart items
         self.cart_item_cards = [] # stores all the cart item cards
-        self.configure(background="brown",width=400,height=400)
+        self.configure(background="#253C6D",width=400,height=400)
         self.pack_propagate(False) # Keep size fixed
         content_frame = tk.Frame(self, bg="yellow") # Creating content frame for items
         content_frame.pack(fill="both", expand=True)
-        self.cart_scroll = ScrollableFrame(content_frame, bg="brown") # make the frame scrollable
+        self.cart_scroll = ScrollableFrame(content_frame, bg="#253C6D") # make the frame scrollable
         self.cart_scroll.pack(fill="both", expand=True)
         
         close_btn = tk.Button(self.cart_scroll.content_frame,text = "Close", command=self.close)
@@ -406,7 +444,7 @@ class CartFrame(tk.Frame): # Cart frame initialization
                     messagebox.showinfo("Congratulations!", f"Your order has been made!!. Your Order Number is #{order_num}")
                     self.clear_cart()
                     self.empty_cart_list()
-                    self.cutomerframe.refresh_menu()
+                    self.app.frames["orderframe"].refresh_menu()
                     self.app.frames["orderhistory"].refresh()
                     self.close()
                 elif result == "FAILED":
@@ -451,29 +489,29 @@ class SettingsFrame(tk.Frame): # Settings frame initialization
     def __init__(self,app):
         super().__init__(app.root) # Inherits the main root window as the place to be displayed
         self.app = app
-        self.configure(background="grey")
+        self.configure(background=self.app.darkblue)
 
         header_frame = tk.Frame(self) # creating and placing frames
         header_frame.pack()
-        msg = tk.Label(self,text= "Welcome to the settings page", anchor="center", font=("Arial",20), bg = "grey")
+        msg = tk.Label(self,text= "Welcome to the settings page", anchor="center", font=("Arial",20,"bold"), bg = self.app.darkblue,foreground=self.app.orange)
         msg.pack(pady=10)
 
-        content_frame = tk.Frame(self,bg = "grey")
+        content_frame = tk.Frame(self,bg = self.app.darkblue)
         content_frame.pack(fill="both", expand=True)
 
-        user_label = tk.Label(content_frame,text="  Username:  ",font=("Arial",20),bg="grey")
+        user_label = tk.Label(content_frame,text="  Username:  ",font=("Arial",20,"bold"), bg = self.app.darkblue,foreground=self.app.orange)
         user_label.grid(row=0,column=0,padx=10,pady=10)
 
         self.user_entry = tk.Entry(content_frame,width=40)
         self.user_entry.grid(row=0,column= 1,padx= 20,pady=50)
 
-        password_label1 = tk.Label(content_frame,text="  New password:  ",font=("Arial",20),bg="grey")
+        password_label1 = tk.Label(content_frame,text="  New password:  ",font=("Arial",20,"bold"), bg = self.app.darkblue,foreground=self.app.orange)
         password_label1.grid(row=1,column=0,padx=10,pady=10)
         
         self.password1_entry = tk.Entry(content_frame,width=40,show="*")
         self.password1_entry.grid(row=1,column= 1,padx= 20,pady= 50)
 
-        self.password2_label = tk.Label(content_frame,text="  Re-enter New password:  ",font=("Arial",20),bg="grey")
+        self.password2_label = tk.Label(content_frame,text="  Re-enter New password:  ",font=("Arial",20,"bold"), bg = self.app.darkblue,foreground=self.app.orange)
         self.password2_label.grid(row=3,column=0,padx=10,pady=10)
                 
         self.password2_entry = tk.Entry(content_frame,width=40,show="*")
@@ -524,32 +562,32 @@ class OrderHistoryFrame(tk.Frame): # Order history frame initialization
     def __init__(self,app):
         super().__init__(app.root) # Inherits the main root window as the place to be displayed
         self.app = app
-        self.configure(background="brown")
+        self.configure(background=self.app.darkblue)
         self.history_cards = [] # holds all the history cards
 
-        header_frame = tk.Frame(self,bg= "brown")
+        header_frame = tk.Frame(self,bg= self.app.darkblue)
         header_frame.pack()
         
-        content_frame = tk.Frame(self,bg="brown")
+        content_frame = tk.Frame(self,bg=self.app.lightblue)
         content_frame.pack(fill="both", expand=True)
 
-        self.orderhistory_scroll = ScrollableFrame(content_frame, bg="brown")
+        self.orderhistory_scroll = ScrollableFrame(content_frame, bg=self.app.lightblue)
         self.orderhistory_scroll.pack(fill="both", expand=True)
 
         header_frame.columnconfigure(1, weight=5)
         header_frame.columnconfigure(0, weight=2)
         header_frame.columnconfigure(2, weight=2)
 
-        intro = tk.Label(header_frame,text="  Welcome to the Order History Page ",anchor="center", font=("Arial",20), bg = "brown")
+        intro = tk.Label(header_frame,text="  Welcome to the Order History Page ",anchor="center", font=("Arial",20,"bold"), bg = self.app.darkblue,foreground = self.app.orange)
         intro.grid(row=0,column=1)
 
-        note = tk.Label(header_frame,text=" NOTE: Always refresh this page for new updates to history ",anchor="center", font=("Arial",10), bg = "grey")
+        note = tk.Label(header_frame,text=" NOTE: Always refresh this page for new updates to history ",anchor="center", font=("Arial",15,"bold"), bg = "black",foreground = self.app.orange)
         note.grid(row=1,column=1)
 
-        back_btn = tk.Button(header_frame,text="Back", command= self.back_menu)
+        back_btn = tk.Button(header_frame,text="Back", command= self.back_menu,bg = self.app.darkblue,foreground = self.app.orange)
         back_btn.grid(row=0,column= 0,padx=5)
 
-        refresh_btn = tk.Button(header_frame,text="Refresh", command= self.refresh)
+        refresh_btn = tk.Button(header_frame,text="Refresh", command= self.refresh,bg = self.app.darkblue,foreground = self.app.orange)
         refresh_btn.grid(row=0,column=2,padx=5)
 
 
@@ -604,7 +642,7 @@ class ScrollableFrame(tk.Frame): # Initialize class
 class ItemCard(tk.Frame): # Initializes the class
     def __init__(self, parent,cartframe, item_id, name, description, image, price): # All the parameters
         super().__init__(parent) # Inherits from the customer frame class
-        self.BG = "orange"
+        self.BG ="#F2842F"
         self.configure(background=self.BG,width =200,height=250)
         self.grid_propagate(False)
         self.cartframe = cartframe
@@ -629,24 +667,24 @@ class ItemCard(tk.Frame): # Initializes the class
         img.grid(row=1,column=0,columnspan=2,padx=15,pady=5)
         self.clickable_widgets(img)
 
-        name = tk.Label(self,text = self.name, anchor="center")
-        name.grid(row=0,column=0,columnspan=2,padx=13,pady=5)
+        name = tk.Label(self,text = self.name, anchor="center",foreground="#30497D",background="#F2842F",font=("bold"))
+        name.grid(row=0,column=0,columnspan=2,padx=13,pady=2)
         self.clickable_widgets(name)
 
-        desc = tk.Label(self,text = self.description, anchor="center",wraplength=190,justify="center")
+        desc = tk.Label(self,text = self.description, anchor="center",wraplength=190,justify="center",foreground="#30497D",background="#F2842F")
         desc.grid(row=2,column=0,columnspan=2,padx=13,pady=5)
         self.clickable_widgets(desc)
 
-        price = tk.Label(self, text=f"£{self.price:.2f}", anchor="center")
+        price = tk.Label(self, text=f"£{self.price:.2f}", anchor="center",foreground="#30497D",background="#F2842F")
         price.grid(row=3,column=0,columnspan=2,padx=13,pady=5)
         self.clickable_widgets(price)
 
-        stock_level_label = tk.Label(self,text=self.warning,anchor="center")
+        stock_level_label = tk.Label(self,text=self.warning,anchor="center",foreground="#30497D",background="#F2842F")
         stock_level_label.grid(row=4,column=0,columnspan=2,padx=13,pady=5)
         self.clickable_widgets(stock_level_label)
 
     def clickable_widgets(self,widget): # making the whole widget clickable
-        if self.stock_level > 10:
+        if self.stock_level > 9:
             widget.bind("<Button-1>",self.open_popup)
         else:
             self.BG = "grey"
@@ -661,18 +699,18 @@ class ItemCard(tk.Frame): # Initializes the class
     def open_popup(self,event): # the popup for each item
         if self.popup != None:
             return 
-        self.popup = tk.Toplevel(self) # creating a top level frame
+        self.popup = tk.Toplevel(self,bg="#30497D") # creating a top level frame
         self.popup.title(self.name)
         self.popup.geometry("300x350")
-        tk.Label(self.popup, text=self.name).pack(pady=10) # adding all the labels on it
+        tk.Label(self.popup, text=self.name,bg="#30497D",foreground="#F2842F",font=("bold")).pack(pady=5) # adding all the labels on it
         tk.Label(self.popup, image=self.image).pack(pady=5)
-        tk.Label(self.popup, text=f"This item is a {self.description}",wraplength=150).pack(pady=10)
-        tk.Label(self.popup, text=f"One portion costs: £{self.price:.2f}").pack(pady=10)
+        tk.Label(self.popup, text=f"This item is a {self.description}",wraplength=150,bg="#30497D",foreground="#F2842F").pack(pady=10)
+        tk.Label(self.popup, text=f"One portion costs: £{self.price:.2f}",bg="#30497D",foreground="#F2842F").pack(pady=10)
         self.qty = tk.Spinbox(self.popup, from_=0,to=10,width=10,state="normal",justify="center",wrap="True") # adding the spin box for quantity
         self.qty.config(state="readonly") # prevent user input allow only through arrows
         self.qty.pack()
-        tk.Button(self.popup,text="Add to chart",command=self.add_to_cart).pack(pady=5)
-        tk.Button(self.popup,text="Close",command=self.close_popup).pack(pady=5)# placing the checkout button
+        tk.Button(self.popup,text="Add to chart",command=self.add_to_cart,bg="#30497D",foreground="#F2842F").pack(pady=5)
+        tk.Button(self.popup,text="Close",command=self.close_popup,bg="#30497D",foreground="#F2842F").pack(pady=5)# placing the checkout button
         self.popup.protocol("WM_DELETE_WINDOW", self.close_popup) # closing the popup
 
     def close_popup(self): # close popup
@@ -710,7 +748,7 @@ class ItemCard(tk.Frame): # Initializes the class
 class Cart_item_card(tk.Frame): # creating the card for the cart cards
     def __init__(self, parent,cartframe, item_id, name, price,quantity):
         super().__init__(parent)
-        self.configure(background="orange",width =180,height=100)
+        self.configure(background="#F2842F",width =180,height=100)
         self.grid_propagate(False)
         self.item_id = item_id
         self.name = name
@@ -741,7 +779,7 @@ class order_history_card(tk.Frame): # creating the order history cards
         super().__init__(parent)
         self.parent = parent
         self.status = status
-        self.configure(background="orange",width =200,height=200)
+        self.configure(background="#F2842F",width =200,height=200)
         self.grid_propagate(False)
         self.order_number = order_number
         self.order_list = order_list
@@ -751,7 +789,7 @@ class order_history_card(tk.Frame): # creating the order history cards
 
         self.clickable_widgets(self) # making the widgets clickable
 
-        order_text = tk.Label(self,text = f"ORDER #{self.order_number} Details",font=15,anchor="center",bg = "orange")
+        order_text = tk.Label(self,text = f"ORDER #{self.order_number} Details",font=15,anchor="center",bg ="#F2842F",foreground="#455B8A")
         order_text.pack(pady= 10,padx= 10)
         self.clickable_widgets(order_text)
 
@@ -841,47 +879,47 @@ class AddItem(tk.Frame): # Add Item frame initialization
     def __init__(self,app):
         super().__init__(app.root) # Inherits the main root window as the place to be displayed
         self.app = app
-        self.configure(background="#ab6f8a")
+        self.configure(background=self.app.lightblue)
         header_frame = tk.Frame(self)
         header_frame.pack()
-        msg = tk.Label(self,text= "Welcome to the add items page", anchor="center", font=("Arial",20), bg = "grey")
+        msg = tk.Label(self,text= "Welcome to the add items page", anchor="center", font=("Arial",20,"bold"), bg = self.app.lightblue,foreground=self.app.orange)
         msg.pack(pady=10)
-        content_frame = tk.Frame(self,bg = "#ab6f8a")
+        content_frame = tk.Frame(self,bg = self.app.lightblue)
         content_frame.pack(fill="both", expand=True)
         #creating labels
-        item_name_label = tk.Label(content_frame,text="  Name:  ",font=("Arial",10))
+        item_name_label = tk.Label(content_frame,text="  Name:  ",font=("Arial",20,"bold"),bg = self.app.lightblue,foreground=self.app.orange)
         item_name_label.grid(row=0,column=0,padx=10,pady=10)
 
         self.name_entry = tk.Entry(content_frame,width=40)
         self.name_entry.grid(row=0,column= 1,padx= 10,pady=25)
 
-        description_label = tk.Label(content_frame,text="  Description:  ",font=("Arial",10))
+        description_label = tk.Label(content_frame,text="  Description:  ",font=("Arial",20,"bold"),bg = self.app.lightblue,foreground=self.app.orange)
         description_label.grid(row=1,column=0,padx=10,pady=10)
         
         self.description_entry = tk.Entry(content_frame,width=40)
         self.description_entry.grid(row=1,column= 1,padx= 10,pady= 25)
 
-        image_label = tk.Label(content_frame,text="  Image  ",font=("Arial",10))
+        image_label = tk.Label(content_frame,text="  Image  ",font=("Arial",20,"bold"),bg = self.app.lightblue,foreground=self.app.orange)
         image_label.grid(row=2,column=0,padx=10,pady=10)
                 
         self.image_entry = tk.Entry(content_frame,width=40)
         self.image_entry.grid(row=2,column= 1,padx= 10,pady=25)
 
-        qty_label = tk.Label(content_frame,text = "Quantity", font = ("Arial,10"))
+        qty_label = tk.Label(content_frame,text = "Quantity", font= ("Arial",20,"bold"),bg = self.app.lightblue,foreground=self.app.orange)
         qty_label.grid(row=3, column=0, padx = 10, pady = 25)
 
         self.qty = tk.Spinbox(content_frame, from_=0,to=100,width=10,state="normal",justify="center",wrap="True")
         self.qty.config(state="readonly")
         self.qty.grid(row=3, column = 1, padx= 10, pady= 25)
 
-        price_label = tk.Label(content_frame,text="  Price  ",font=("Arial",10))
+        price_label = tk.Label(content_frame,text="  Price  ",font=("Arial",20,"bold"),bg = self.app.lightblue,foreground=self.app.orange)
         price_label.grid(row=4,column=0,padx=10,pady=10)
     
         self.price = tk.Spinbox(content_frame, from_=0,to=10,width=10,state="normal",justify="center",wrap="True",increment = 0.1)
         self.price.config(state="readonly")
         self.price.grid(row=4, column = 1, padx= 10, pady= 25)
 
-        category_label = tk.Label(content_frame, text = " Category ", font = ("Arial,10"))
+        category_label = tk.Label(content_frame, text = " Category ", font=("Arial",20,"bold"),bg = self.app.lightblue,foreground=self.app.orange)
         category_label.grid(row = 5, column = 0,padx = 10, pady = 25)
         self.category = ["Drinks", "Meals", "Snacks", "Desserts"]
         self.selection = ttk.Combobox(content_frame,values= self.category)
@@ -889,10 +927,10 @@ class AddItem(tk.Frame): # Add Item frame initialization
         self.selection.set("Select a Category")
         self.selection.grid(row=5, column = 1)
         
-        back_btn = tk.Button(content_frame,text="Back", command= self.backbutton)
+        back_btn = tk.Button(content_frame,text="Back", command= self.backbutton,bg = self.app.lightblue,foreground=self.app.orange)
         back_btn.grid(row=6,column=1, padx= 10,pady=30)
         
-        add_btn = tk.Button(content_frame,text="Add Item", command= self.additem)
+        add_btn = tk.Button(content_frame,text="Add Item", command= self.additem,bg = self.app.lightblue,foreground=self.app.orange)
         add_btn.grid(row=6,column=2, padx= 10,pady=30)
 
     def backbutton(self): # return to the previous page
@@ -925,22 +963,22 @@ class showOrders(tk.Frame): # show all orders page initialization
     def __init__(self,app):
         super().__init__(app.root) # Inherits the main root window as the place to be displayed
         self.app = app
-        self.configure(background="#62239c")
+        self.configure(background=self.app.darkblue)
         self.order_cards = []
 
         header_frame = tk.Frame(self)
+        header_frame.config(bg=self.app.lightblue)
         header_frame.pack()
-        msg = tk.Label(self,text= "Welcome to the orders page", anchor="center", font=("Arial",20), bg = "grey")
-        msg.pack(pady=10)
+        back_btn = tk.Button(header_frame,text="Back", command= self.backbutton,bg = self.app.darkblue,foreground = self.app.orange)
+        back_btn.grid(row=0,column=0,padx=5,pady=5)
+        msg = tk.Label(header_frame,text= "Welcome to the orders page", anchor="center", font=("Arial",20), bg =self.app.darkblue,foreground = self.app.orange)
+        msg.grid(row=0,column=1,padx=5,pady=5)
 
-        self.content_frame = tk.Frame(self,bg = "#ab6f8a")
+        self.content_frame = tk.Frame(self,bg =self.app.lightblue)
         self.content_frame.pack(fill="both", expand=True)
 
-        self.showOrders_scroll = ScrollableFrame(self.content_frame, bg="brown")
+        self.showOrders_scroll = ScrollableFrame(self.content_frame, bg=self.app.lightblue)
         self.showOrders_scroll.pack(fill="both", expand=True)
-
-        back_btn = tk.Button(self,text="Back", command= self.backbutton)
-        back_btn.pack(pady=30)
 
         self.display()
 
@@ -971,4 +1009,151 @@ class showOrders(tk.Frame): # show all orders page initialization
     def backbutton(self): # return to the previous page
         self.app.show_frame(self.app.frames["orderframe"])
         self.app.frames["orderframe"].collapse_panel()
+
+
+class UpdateItem(tk.Frame): # Add Item frame initialization
+    def __init__(self,app):
+        super().__init__(app.root) # Inherits the main root window as the place to be displayed
+        self.app = app
+        self.configure(background=self.app.lightblue)
+        header_frame = tk.Frame(self,bg=self.app.lightblue)
+        header_frame.pack()
+        msg = tk.Label(self,text= "Welcome to the Update items page", anchor="center", font=("Arial",20,"bold"), bg =self.app.lightblue ,foreground = self.app.orange)
+        msg.pack(pady=10)
+       
+        self.search_id_entry = tk.Entry(self,width=20)
+        self.search_id_entry.pack()
+
+        search_button = tk.Button(self,text = "Search",command = self.search_id,bg = self.app.lightblue,foreground = self.app.orange)
+        search_button.pack(pady=10)
+
+        content_frame = tk.Frame(self,bg = self.app.lightblue)
+        content_frame.pack(fill="both", expand=True)
+
+        upd_btn = tk.Button(self,text="Update" ,command= self.upd,bg = self.app.lightblue,foreground = self.app.orange)
+        upd_btn.pack(pady= 10 )
+
+        back_button = tk.Button(self,text = "Back ",command = self.back,bg = self.app.lightblue,foreground = self.app.orange)
+        back_button.pack(pady = 10)
+
+        item_name_label = tk.Label(content_frame,text="  Name:  ",font=("Arial",15,"bold"),bg =self.app.lightblue,foreground = self.app.orange)
+        item_name_label.grid(row=0,column=0,padx=10,pady=10)
+        
+        self.name_entry = tk.Entry(content_frame,width=40)
+        self.name_entry.grid(row=0,column= 1,padx= 10,pady=25)
+
+        item_desc_label = tk.Label(content_frame,text="  Description:  ",font=("Arial",15,"bold"),bg = self.app.lightblue,foreground = self.app.orange)
+        item_desc_label.grid(row=1,column=0,padx=10,pady=10)
+
+        self.desc_entry = tk.Entry(content_frame,width=50)
+        self.desc_entry.grid(row=1,column= 1,padx= 10,pady=25)
+
+        item_qty_label = tk.Label(content_frame,text="  Quantity:  ",font=("Arial",15,"bold"),bg = self.app.lightblue,foreground = self.app.orange)
+        item_qty_label.grid(row=2,column=0,padx=10,pady=10)
+
+        self.qty = tk.Spinbox(content_frame, from_=0,to=100,width=10,state="normal",justify="center",wrap="True")
+        self.qty.grid(row=2, column = 1, padx= 10, pady= 25)
+
+        price_label = tk.Label(content_frame,text="  Price  ",font=("Arial",15,"bold"),bg = self.app.lightblue,foreground = self.app.orange)
+        price_label.grid(row=3,column=0,padx=10,pady=10)
+
+        self.price = tk.Spinbox(content_frame, from_=0,to=10,width=10,state="normal",justify="center",wrap="True",increment = 0.1)
+        self.price.grid(row=3, column = 1, padx= 10, pady= 25)
+
+
+    def search_id(self):
+        id = self.search_id_entry.get()
+        try:
+            actual_id = int(id)
+            self.data = self.app.database.get_info(actual_id)
+        except:
+            messagebox.showerror("Inavlid Input","Only enter Item ID as Integers")
+            return
+        if self.data:
+            print(self.data)
+            self.name_entry.delete(0,tk.END)
+            self.desc_entry.delete(0,tk.END)
+            self.qty.delete(0,tk.END)
+            self.price.delete(0,tk.END)
+            self.price.insert(0,str(self.data[0][3]))
+            self.name_entry.insert(0,self.data[0][0])
+            self.desc_entry.insert(0,self.data[0][1])
+            self.qty.insert(0,str(self.data[0][2]))
+        else:
+            messagebox.showerror("Invalid ID", "The ID entered is not in the Database")
+
+    def back(self): # return to the previous page
+        self.app.show_frame(self.app.frames["orderframe"])
+        self.app.frames["orderframe"].collapse_panel()
+        self.name_entry.delete(0,tk.END)
+        self.desc_entry.delete(0,tk.END)
+        self.qty.delete(0,tk.END)
+        self.price.delete(0,tk.END)
+
+    def upd(self):
+        new_name = self.name_entry.get()
+        new_desc = self.desc_entry.get()
+        new_qty = self.qty.get()
+        new_price = self.price.get()
+        if new_name and new_desc and new_qty and new_price:
+            if self.app.database.get_item(new_name) and new_name != self.data[0][0]:
+                messagebox.showerror("Item name Duplicate","The item name entered is already in the database")
+            else:
+                if float(new_price) >= 0.1:
+                    validate = messagebox.askyesno("Warning", "Are you sure you want to update the database")
+                    if validate:
+                        self.app.database.upd_item(self.search_id_entry.get(),new_name,new_desc,new_price,new_qty)
+                        messagebox.showinfo("Success", "Item information has been successfully updated.")
+                        self.app.frames["orderframe"].refresh_menu()
+                else:
+                    messagebox.showerror("Invalid price", "The price entered is invalid")
+        else:
+            messagebox.showwarning("Invalid inputs","Make sure all fields are filled")
+
+class DeleteItem(tk.Frame): # Add Item frame initialization
+    def __init__(self,app):
+        super().__init__(app.root) # Inherits the main root window as the place to be displayed
+        self.app = app
+        self.configure(background="orange")
+        self.score = 100
+        self.result = 0
+        header_frame = tk.Frame(self,bg="yellow")
+        header_frame.pack()
+        msg = tk.Label(self,text= "Welcome to the Delete items page / Game", anchor="center", font=("Arial",20), bg = "brown")
+        msg.pack(pady=10)
+
+        self.score_label = tk.Label(self,text = f"Your Score is  {self.score}")
+        self.score_label.pack()
+
+        deleteBtn = tk.Button(self,text = "DELETE ALL",width=45,height = 10,bg="red",anchor="center",font=("Arial,50"),command= self.delg)
+        deleteBtn.pack(pady= 60)
+
+        self.reward_label = tk.Label(self,text = f"You gain {self.result} points")
+        self.reward_label.pack()
+
+        back_btn = tk.Button(self,text="Back", command= self.backbutton)
+        back_btn.pack(pady=60)
+
+
+    def backbutton(self): # return to the previous page
+        self.app.show_frame(self.app.frames["orderframe"])
+        self.app.frames["orderframe"].collapse_panel()
+
+    def delg(self):
+        if self.score > 9:
+            cost = 10
+            self.result = self.probability()
+            self.score = int(self.score) - int(cost) + int(self.result)
+            self.score_label.config(text = f"Score = {self.score}")
+            self.reward_label.config(text = f"You gain {self.result} points")
+        else:
+            messagebox.showerror("Too Poor", "Sorry Mate you are kinda broke")
+
+    def probability(self):
+        outcomes = [10,15,20,30,50,100,150,200,-10,-5,-70,-20,-100]
+        percent = [40,50,35,15,13,11,5,1,18,25,10,12,9]
+        num = random.choices(outcomes,percent)
+        return num[0]
+
+
 MainApp()

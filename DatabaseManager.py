@@ -67,21 +67,22 @@ class DatabaseClass:
         if word != "" and category != []:
             items = self.cursor.execute(f"""
             SELECT * FROM MenuItems 
-            WHERE Item_Name LIKE ? AND Category_ID IN ({placeholders})
+            WHERE Item_Name LIKE ? AND Category_ID IN ({placeholders}) AND Quantity > 9
             """,(f"%{word}%",*category)).fetchall()
         elif word == "" and category != []:
            items = self.cursor.execute(f"""
            SELECT * FROM MenuItems 
-           WHERE Category_ID IN ({placeholders})
+           WHERE Category_ID IN ({placeholders}) AND Quantity > 9
            """,(category)).fetchall()
         elif word != "" and category == []:
             items = self.cursor.execute("""
             SELECT * FROM MenuItems 
-            WHERE Item_Name LIKE (?)
+            WHERE Item_Name LIKE (?) AND Quantity > 9
             """,(f"%{word}%",)).fetchall()
         else:
             items = self.cursor.execute("""
                     SELECT * FROM MenuItems
+                    WHERE Quantity > 9
             """).fetchall() 
         return items
 
@@ -211,4 +212,14 @@ class DatabaseClass:
         self.cursor.execute("UPDATE Orders SET Status = True WHERE Order_ID = ?",(id,))
         self.connection.commit()
 
-    
+    def get_info(self,id):
+        info = self.cursor.execute("SELECT Item_Name, Item_Description, Quantity, Price FROM MenuItems WHERE Item_ID = ?",(id,)).fetchall()
+        return info
+
+    def get_item(self,name):
+        item = self.cursor.execute("SELECT * FROM MenuItems WHERE Item_Name = ?",(name,)).fetchall()
+        return item
+
+    def upd_item(self,id,name,desc,price,qty):
+        self.cursor.execute("UPDATE MenuItems SET Item_Name = ?,Item_Description = ? ,Price = ?,Quantity = ? WHERE Item_ID = ?",(name,desc,price,qty,id))
+        self.connection.commit()
